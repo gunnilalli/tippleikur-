@@ -326,11 +326,17 @@ function computeScore(playerName){
     const pts=scoreMatch(pg[0],pg[1],r.h,r.a);
     if(pts===3) exact++;else if(pts===1) outcome++;
   });
+  // Only award advancement points when all 6 matches in a group are finished
   const realS=computeStandings(results),realAdv=new Set();
-  GROUPS.forEach(grp=>(realS[grp]||[]).slice(0,2).forEach(t=>realAdv.add(t)));
   const predS=computeStandings(Object.fromEntries(Object.entries(g).map(([k,v])=>[k,{h:v[0],a:v[1]}])));
   const predAdv=new Set();
-  GROUPS.forEach(grp=>(predS[grp]||[]).slice(0,2).forEach(t=>predAdv.add(t)));
+  GROUPS.forEach(grp=>{
+    const grpMatches=MATCHES.filter(m=>m.g===grp);
+    const grpDone=grpMatches.every(m=>results[m.id]!=null);
+    if(!grpDone) return; // skip group if not all matches played
+    (realS[grp]||[]).slice(0,2).forEach(t=>realAdv.add(t));
+    (predS[grp]||[]).slice(0,2).forEach(t=>predAdv.add(t));
+  });
   realAdv.forEach(t=>{if(predAdv.has(t)) adv++;});
   return{total:exact*3+outcome+adv*2,exact,outcome,adv};
 }
