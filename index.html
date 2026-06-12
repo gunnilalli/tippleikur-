@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HM 2026 Tippleikur</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--card:#fff;--border:#e4e6ea;
+  --blue:#1877f2;--blue-bg:#e7f0ff;--blue-light:#d0e4ff;
+  --green:#2d9e44;--green-bg:#e9f8ee;
+  --gold:#f0a500;--silver:#9aa0a6;--bronze:#c8762a;
+  --text:#1c1e21;--text2:#65676b;--text3:#b0b3b8;
+  --radius:8px;--radius-lg:12px;--shadow:0 1px 3px rgba(0,0,0,0.1);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--blue);text-decoration:none}
+
+/* Header */
+.header{background:var(--blue);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+.header-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.header h1{font-size:18px;font-weight:700}
+.header-meta{font-size:12px;opacity:0.85;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* Nav */
+.nav{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:57px;z-index:99}
+.nav-inner{max-width:900px;margin:0 auto;display:flex}
+.nav-btn{background:none;border:none;border-bottom:3px solid transparent;padding:12px 18px;cursor:pointer;font-size:14px;color:var(--text2);font-weight:500;transition:color 0.15s}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+
+/* Content */
+.page{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+.section{display:none}
+.section.active{display:block}
+
+/* Cards */
+.card{background:var(--card);border-radius:var(--radius-lg);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h2{font-size:15px;font-weight:600}
+.card-body{padding:16px 18px}
+
+/* Leaderboard */
+.lb-row{display:flex;align-items:center;gap:12px;padding:10px 18px;border-bottom:1px solid var(--border);transition:background 0.1s}
+.lb-row:last-child{border-bottom:none}
+.lb-row:hover{background:#f7f8fa}
+.lb-row.gold{background:linear-gradient(90deg,#fffbf0,#fff)}
+.lb-rank{width:28px;text-align:center;font-size:18px;flex-shrink:0}
+.lb-rank.num{font-size:13px;font-weight:700;color:var(--text2)}
+.lb-avatar{width:36px;height:36px;border-radius:50%;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:var(--blue);flex-shrink:0}
+.lb-info{flex:1;min-width:0}
+.lb-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-bar-wrap{height:4px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden}
+.lb-bar{height:100%;border-radius:2px;background:var(--blue);transition:width 0.6s ease}
+.lb-detail{font-size:11px;color:var(--text2);margin-top:3px}
+.lb-detail .ex{color:var(--blue);font-weight:600}
+.lb-detail .adv{color:var(--green);font-weight:600}
+.lb-pts-wrap{text-align:right;flex-shrink:0}
+.lb-pts{font-size:22px;font-weight:800;color:var(--blue);line-height:1}
+.lb-pts-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.stat-card{background:var(--card);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.stat-value{font-size:20px;font-weight:800;color:var(--text)}
+.stat-sub{font-size:12px;color:var(--text2);margin-top:2px}
+
+/* Per-player stat table */
+.stat-table{width:100%;border-collapse:collapse;font-size:13px}
+.stat-table th{text-align:left;padding:7px 10px;color:var(--text2);border-bottom:2px solid var(--border);font-weight:600;font-size:12px}
+.stat-table th:not(:first-child){text-align:right}
+.stat-table td{padding:7px 10px;border-bottom:1px solid var(--border)}
+.stat-table td:not(:first-child){text-align:right}
+.stat-table tr:last-child td{border-bottom:none}
+.stat-table tr:hover td{background:#f7f8fa}
+.stat-table .hi{color:var(--blue);font-weight:700}
+
+/* Matches */
+.match-group{margin-bottom:20px}
+.match-group-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;font-weight:600}
+.match-row{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--card);border-radius:var(--radius);margin-bottom:3px;box-shadow:var(--shadow);font-size:13px}
+.match-num{width:20px;color:var(--text3);font-size:11px;flex-shrink:0}
+.match-grp{font-size:10px;background:var(--blue-bg);color:var(--blue);border-radius:4px;padding:2px 5px;font-weight:700;flex-shrink:0}
+.match-home{flex:1;text-align:right;font-weight:500}
+.match-score{min-width:44px;text-align:center;font-weight:700;color:var(--text2)}
+.match-score.done{color:var(--blue)}
+.match-away{flex:1;font-weight:500}
+.match-date{font-size:10px;color:var(--text3);flex-shrink:0;min-width:50px;text-align:right}
+
+/* Refresh bar */
+.refresh-bar{background:var(--blue-bg);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;font-size:13px;color:var(--blue)}
+.refresh-btn{background:var(--blue);color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600}
+.refresh-btn:disabled{opacity:0.6;cursor:not-allowed}
+
+/* Error bar */
+.error-bar{background:#fff3cd;border:1px solid #ffc107;border-radius:var(--radius);padding:10px 14px;margin-bottom:16px;font-size:13px;color:#856404;display:none}
+
+/* Responsive */
+@media(max-width:480px){
+  .nav-btn{padding:10px 12px;font-size:13px}
+  .lb-avatar{display:none}
+  .stats-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <h1>⚽ HM 2026 Tippleikur</h1>
+    <div class="header-meta">
+      <span><span class="live-dot"></span>Í beinni</span>
+      <span id="hdr-matches">— leikir spilaðir</span>
+      <span id="hdr-updated">—</span>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" onclick="showSection('leaderboard')">🏆 Stigatafla</button>
+    <button class="nav-btn" onclick="showSection('stats')">📊 Tölfræði</button>
+    <button class="nav-btn" onclick="showSection('matches')">📋 Leikir</button>
+  </div>
+</div>
+
+<div class="page">
+  <div class="error-bar" id="error-bar"></div>
+  <div class="refresh-bar">
+    <span id="refresh-status">Sæki niðurstöður...</span>
+    <button class="refresh-btn" id="refresh-btn" onclick="fetchAndUpdate()" disabled>↻ Uppfæra</button>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="section active" id="section-leaderboard">
+    <div class="card">
+      <div class="card-header"><h2>Stigatafla</h2><span id="lb-subtitle" style="font-size:12px;color:var(--text2)"></span></div>
+      <div id="lb-list"></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="section" id="section-stats">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="card">
+      <div class="card-header"><h2>Sundurliðun á þátttakanda</h2></div>
+      <div class="card-body" style="padding:0;overflow-x:auto">
+        <table class="stat-table" id="stat-table">
+          <thead><tr>
+            <th>Nafn</th>
+            <th>Nákvæm ×3</th>
+            <th>Úrslit ×1</th>
+            <th>Framg. ×2</th>
+            <th style="color:var(--blue)">Samtals</th>
+          </tr></thead>
+          <tbody id="stat-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Skemmtilegar staðreyndir</h2></div>
+      <div class="card-body" id="fun-facts" style="display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.6"></div>
+    </div>
+  </div>
+
+  <!-- MATCHES -->
+  <div class="section" id="section-matches">
+    <div id="matches-list"></div>
+  </div>
+</div>
+
+<script>
+// ── ALL GUESSES ──────────────────────────────────────────────────────────────
+const PLAYERS = [
+  {name:'Gunnar', display:'Gunnar'},
+  {name:'Sprölli', display:'Sprölli'},
+  {name:'Illugi', display:'Illugi'},
+  {name:'Svet', display:'Svet'},
+  {name:'Jóki', display:'Jóki'},
+  {name:'Meddi', display:'Meddi'},
+  {name:'Marri', display:'Marri'},
+  {name:'Fáni', display:'Fáni'},
+  {name:'Hroar', display:'Hroar'},
+  {name:'Formy', display:'Formy'},
+  {name:'Geimur', display:'Geimur'},
+];
+
+const GUESSES = {
+"Gunnar":{"1":[2,0],"2":[2,1],"3":[2,0],"4":[1,1],"5":[0,3],"6":[3,0],"7":[0,2],"8":[0,2],"9":[5,0],"10":[1,1],"11":[2,1],"12":[3,1],"13":[4,0],"14":[2,1],"15":[0,2],"16":[0,0],"17":[2,0],"18":[0,3],"19":[3,0],"20":[2,0],"21":[4,0],"22":[1,1],"23":[1,0],"24":[0,2],"25":[1,0],"26":[2,0],"27":[1,0],"28":[1,1],"29":[2,0],"30":[0,1],"31":[6,0],"32":[0,0],"33":[3,2],"34":[3,1],"35":[2,0],"36":[0,1],"37":[5,0],"38":[3,0],"39":[3,0],"40":[0,2],"41":[3,1],"42":[4,0],"43":[2,1],"44":[0,0],"45":[4,0],"46":[1,0],"47":[0,2],"48":[2,0],"49":[1,0],"50":[1,0],"51":[0,2],"52":[3,0],"53":[1,1],"54":[0,1],"55":[1,2],"56":[0,2],"57":[1,1],"58":[0,2],"59":[1,1],"60":[1,0],"61":[2,2],"62":[2,1],"63":[0,0],"64":[1,3],"65":[1,0],"66":[0,4],"67":[0,5],"68":[2,1],"69":[1,2],"70":[1,1],"71":[1,2],"72":[0,4]},
+"Sprölli":{"1":[3,1],"2":[2,0],"3":[0,3],"4":[2,1],"5":[2,2],"6":[3,2],"7":[1,2],"8":[0,2],"9":[6,0],"10":[4,2],"11":[3,0],"12":[1,1],"13":[4,0],"14":[2,1],"15":[2,3],"16":[2,1],"17":[3,1],"18":[0,4],"19":[3,1],"20":[3,1],"21":[5,0],"22":[3,1],"23":[2,0],"24":[0,3],"25":[1,0],"26":[2,0],"27":[1,2],"28":[2,1],"29":[2,0],"30":[1,2],"31":[4,0],"32":[2,2],"33":[2,0],"34":[2,2],"35":[2,1],"36":[1,2],"37":[4,1],"38":[2,0],"39":[3,1],"40":[0,3],"41":[2,0],"42":[3,0],"43":[2,1],"44":[1,1],"45":[4,0],"46":[3,1],"47":[1,3],"48":[2,1],"49":[2,0],"50":[1,1],"51":[1,3],"52":[3,0],"53":[2,2],"54":[1,2],"55":[0,3],"56":[0,2],"57":[2,2],"58":[0,3],"59":[1,1],"60":[2,1],"61":[2,3],"62":[2,0],"63":[0,2],"64":[0,2],"65":[2,0],"66":[0,1],"67":[0,4],"68":[2,1],"69":[1,3],"70":[2,2],"71":[1,1],"72":[0,4]},
+"Illugi":{"1":[3,0],"2":[1,1],"3":[2,1],"4":[2,0],"5":[0,3],"6":[2,1],"7":[0,2],"8":[1,2],"9":[6,0],"10":[2,1],"11":[1,0],"12":[2,0],"13":[3,0],"14":[2,1],"15":[0,2],"16":[1,1],"17":[3,2],"18":[0,4],"19":[2,0],"20":[1,0],"21":[3,0],"22":[2,0],"23":[2,2],"24":[0,4],"25":[1,2],"26":[2,0],"27":[3,1],"28":[2,1],"29":[3,1],"30":[1,2],"31":[4,0],"32":[3,1],"33":[2,1],"34":[2,1],"35":[3,0],"36":[0,2],"37":[2,0],"38":[2,0],"39":[2,1],"40":[0,2],"41":[2,1],"42":[3,0],"43":[1,1],"44":[0,2],"45":[2,0],"46":[2,1],"47":[0,2],"48":[2,1],"49":[1,2],"50":[2,1],"51":[0,2],"52":[3,0],"53":[0,2],"54":[1,2],"55":[0,2],"56":[0,3],"57":[1,2],"58":[0,2],"59":[2,1],"60":[2,1],"61":[1,1],"62":[4,0],"63":[1,1],"64":[1,2],"65":[1,1],"66":[0,4],"67":[0,3],"68":[2,0],"69":[1,2],"70":[2,0],"71":[1,2],"72":[0,3]},
+"Svet":{"1":[2,0],"2":[2,1],"3":[1,1],"4":[1,1],"5":[0,2],"6":[2,1],"7":[0,2],"8":[0,3],"9":[5,0],"10":[1,1],"11":[1,1],"12":[3,0],"13":[5,0],"14":[2,1],"15":[0,2],"16":[2,0],"17":[3,1],"18":[0,3],"19":[3,1],"20":[2,0],"21":[4,0],"22":[2,1],"23":[2,0],"24":[0,3],"25":[2,1],"26":[2,1],"27":[2,0],"28":[1,1],"29":[2,0],"30":[1,2],"31":[4,0],"32":[2,1],"33":[2,1],"34":[2,1],"35":[3,0],"36":[0,2],"37":[3,0],"38":[2,1],"39":[3,0],"40":[0,2],"41":[3,1],"42":[5,0],"43":[2,2],"44":[0,1],"45":[5,0],"46":[3,1],"47":[0,2],"48":[3,0],"49":[2,0],"50":[2,0],"51":[1,3],"52":[3,0],"53":[1,2],"54":[0,2],"55":[0,2],"56":[1,2],"57":[2,1],"58":[0,2],"59":[2,1],"60":[2,0],"61":[1,2],"62":[3,0],"63":[0,1],"64":[1,3],"65":[2,1],"66":[0,2],"67":[0,3],"68":[1,1],"69":[2,2],"70":[1,1],"71":[1,1],"72":[0,4]},
+"Jóki":{"1":[2,0],"2":[1,2],"3":[0,1],"4":[0,0],"5":[0,3],"6":[2,1],"7":[0,3],"8":[0,4],"9":[6,0],"10":[2,2],"11":[1,2],"12":[1,0],"13":[4,0],"14":[1,1],"15":[0,2],"16":[1,1],"17":[2,1],"18":[0,5],"19":[2,0],"20":[3,0],"21":[2,0],"22":[2,1],"23":[2,0],"24":[0,2],"25":[1,1],"26":[3,1],"27":[1,0],"28":[2,1],"29":[2,0],"30":[2,2],"31":[5,0],"32":[1,0],"33":[2,1],"34":[1,1],"35":[2,0],"36":[0,2],"37":[4,1],"38":[3,0],"39":[2,0],"40":[1,2],"41":[2,1],"42":[5,0],"43":[2,1],"44":[0,0],"45":[4,0],"46":[2,0],"47":[1,3],"48":[2,1],"49":[2,0],"50":[1,0],"51":[1,3],"52":[2,0],"53":[1,1],"54":[0,1],"55":[0,2],"56":[1,1],"57":[1,1],"58":[0,2],"59":[2,1],"60":[2,0],"61":[2,2],"62":[2,0],"63":[1,2],"64":[1,2],"65":[1,0],"66":[0,2],"67":[0,4],"68":[2,1],"69":[2,3],"70":[2,0],"71":[1,2],"72":[0,3]},
+"Meddi":{"1":[2,0],"2":[1,1],"3":[1,1],"4":[2,1],"5":[0,2],"6":[1,0],"7":[0,3],"8":[1,2],"9":[6,0],"10":[2,1],"11":[1,1],"12":[2,1],"13":[3,0],"14":[1,0],"15":[0,2],"16":[2,1],"17":[2,0],"18":[0,4],"19":[2,0],"20":[3,0],"21":[4,0],"22":[2,0],"23":[2,1],"24":[0,2],"25":[2,1],"26":[1,0],"27":[2,1],"28":[2,1],"29":[2,1],"30":[0,1],"31":[2,0],"32":[2,1],"33":[1,0],"34":[2,0],"35":[2,0],"36":[0,1],"37":[2,0],"38":[3,0],"39":[2,0],"40":[0,2],"41":[2,0],"42":[5,0],"43":[1,0],"44":[1,2],"45":[4,0],"46":[2,0],"47":[0,1],"48":[2,0],"49":[1,0],"50":[2,1],"51":[0,2],"52":[1,0],"53":[1,2],"54":[1,2],"55":[0,2],"56":[0,2],"57":[0,1],"58":[0,1],"59":[1,1],"60":[1,1],"61":[0,1],"62":[2,0],"63":[0,2],"64":[0,1],"65":[2,0],"66":[0,2],"67":[0,2],"68":[2,1],"69":[1,2],"70":[1,1],"71":[1,1],"72":[0,2]},
+"Marri":{"1":[1,0],"2":[2,2],"3":[1,0],"4":[0,1],"5":[0,3],"6":[3,1],"7":[0,2],"8":[0,2],"9":[6,0],"10":[2,1],"11":[3,1],"12":[0,0],"13":[4,0],"14":[3,1],"15":[1,3],"16":[1,1],"17":[3,1],"18":[0,3],"19":[2,0],"20":[2,0],"21":[2,1],"22":[1,0],"23":[1,0],"24":[0,2],"25":[2,1],"26":[2,0],"27":[1,0],"28":[1,2],"29":[2,0],"30":[1,1],"31":[5,0],"32":[0,0],"33":[1,1],"34":[3,1],"35":[1,0],"36":[1,2],"37":[3,0],"38":[4,1],"39":[3,0],"40":[0,1],"41":[2,0],"42":[5,1],"43":[2,0],"44":[0,1],"45":[2,1],"46":[3,0],"47":[0,2],"48":[2,0],"49":[2,2],"50":[1,0],"51":[1,2],"52":[3,0],"53":[1,2],"54":[1,3],"55":[0,2],"56":[1,2],"57":[1,2],"58":[0,2],"59":[1,1],"60":[1,2],"61":[1,2],"62":[1,0],"63":[0,0],"64":[0,2],"65":[2,0],"66":[0,3],"67":[1,4],"68":[1,0],"69":[1,2],"70":[2,2],"71":[0,1],"72":[0,3]},
+"Fáni":{"1":[3,1],"2":[1,1],"3":[1,2],"4":[1,0],"5":[0,2],"6":[2,1],"7":[0,2],"8":[0,2],"9":[6,0],"10":[3,1],"11":[2,2],"12":[2,0],"13":[5,0],"14":[3,1],"15":[0,4],"16":[2,1],"17":[3,1],"18":[0,3],"19":[3,1],"20":[2,0],"21":[3,0],"22":[1,1],"23":[3,0],"24":[0,4],"25":[2,1],"26":[2,1],"27":[2,1],"28":[2,1],"29":[1,0],"30":[1,1],"31":[4,0],"32":[2,1],"33":[1,1],"34":[2,1],"35":[3,0],"36":[1,2],"37":[5,0],"38":[3,0],"39":[4,0],"40":[1,3],"41":[2,0],"42":[4,0],"43":[2,1],"44":[1,3],"45":[4,0],"46":[3,1],"47":[0,3],"48":[3,1],"49":[2,1],"50":[3,1],"51":[1,2],"52":[4,1],"53":[1,1],"54":[1,2],"55":[1,4],"56":[1,2],"57":[3,2],"58":[0,2],"59":[2,0],"60":[1,1],"61":[1,2],"62":[3,0],"63":[1,1],"64":[1,3],"65":[2,0],"66":[0,2],"67":[0,4],"68":[2,1],"69":[1,2],"70":[3,0],"71":[2,1],"72":[0,4]},
+"Hroar":{"1":[2,0],"2":[2,1],"3":[1,1],"4":[2,1],"5":[0,2],"6":[2,1],"7":[0,2],"8":[1,2],"9":[4,0],"10":[2,1],"11":[1,1],"12":[1,0],"13":[4,0],"14":[3,1],"15":[0,2],"16":[1,0],"17":[2,1],"18":[1,3],"19":[2,0],"20":[2,0],"21":[3,0],"22":[2,1],"23":[2,0],"24":[0,2],"25":[1,0],"26":[2,1],"27":[2,0],"28":[1,1],"29":[2,1],"30":[1,3],"31":[3,0],"32":[1,1],"33":[1,0],"34":[2,1],"35":[2,0],"36":[0,1],"37":[4,1],"38":[2,0],"39":[3,0],"40":[0,1],"41":[2,1],"42":[3,0],"43":[1,0],"44":[0,2],"45":[3,0],"46":[2,1],"47":[0,2],"48":[2,0],"49":[2,1],"50":[2,1],"51":[1,2],"52":[2,0],"53":[1,2],"54":[1,2],"55":[0,2],"56":[1,2],"57":[0,1],"58":[1,2],"59":[1,1],"60":[2,1],"61":[1,1],"62":[2,1],"63":[0,1],"64":[1,2],"65":[1,0],"66":[0,2],"67":[0,2],"68":[2,1],"69":[1,2],"70":[1,1],"71":[1,0],"72":[0,2]},
+"Formy":{"1":[1,1],"2":[0,1],"3":[1,2],"4":[0,0],"5":[0,1],"6":[2,0],"7":[0,3],"8":[0,1],"9":[6,0],"10":[2,1],"11":[1,2],"12":[2,0],"13":[5,0],"14":[2,1],"15":[0,2],"16":[1,1],"17":[3,1],"18":[0,2],"19":[4,1],"20":[2,0],"21":[3,0],"22":[1,1],"23":[2,0],"24":[0,3],"25":[1,1],"26":[2,0],"27":[1,1],"28":[1,2],"29":[1,1],"30":[1,2],"31":[4,0],"32":[2,2],"33":[2,1],"34":[2,1],"35":[1,0],"36":[0,3],"37":[3,0],"38":[3,0],"39":[4,0],"40":[0,2],"41":[2,1],"42":[4,0],"43":[2,1],"44":[0,1],"45":[4,0],"46":[2,1],"47":[0,3],"48":[2,0],"49":[2,0],"50":[1,1],"51":[0,3],"52":[2,0],"53":[1,1],"54":[1,1],"55":[0,2],"56":[1,3],"57":[2,1],"58":[0,2],"59":[2,1],"60":[1,1],"61":[1,3],"62":[1,0],"63":[0,2],"64":[1,2],"65":[2,1],"66":[0,3],"67":[0,4],"68":[2,1],"69":[1,2],"70":[0,0],"71":[0,2],"72":[0,5]},
+"Geimur":{"1":[2,0],"2":[1,2],"3":[1,1],"4":[2,1],"5":[0,3],"6":[5,1],"7":[2,2],"8":[1,2],"9":[6,0],"10":[2,2],"11":[1,3],"12":[2,1],"13":[5,0],"14":[3,1],"15":[1,2],"16":[2,1],"17":[3,1],"18":[2,3],"19":[4,0],"20":[1,0],"21":[1,0],"22":[2,2],"23":[2,1],"24":[0,3],"25":[3,1],"26":[2,1],"27":[2,2],"28":[2,2],"29":[1,0],"30":[2,1],"31":[3,0],"32":[0,2],"33":[1,2],"34":[4,2],"35":[3,0],"36":[1,1],"37":[4,1],"38":[2,0],"39":[3,0],"40":[2,1],"41":[2,1],"42":[5,2],"43":[3,2],"44":[1,2],"45":[2,1],"46":[2,1],"47":[1,3],"48":[2,1],"49":[2,0],"50":[0,1],"51":[1,3],"52":[2,0],"53":[2,1],"54":[0,2],"55":[1,2],"56":[2,3],"57":[2,1],"58":[1,3],"59":[1,1],"60":[2,0],"61":[1,2],"62":[2,0],"63":[0,3],"64":[1,3],"65":[3,0],"66":[0,2],"67":[1,3],"68":[1,1],"69":[2,1],"70":[1,2],"71":[2,2],"72":[1,2]}
+};
+
+const MATCHES = [
+  {id:1,g:"A",h:"Mexíkó",a:"Suður-Afríka",r:1,date:"11. júní"},{id:2,g:"A",h:"Suður-Kórea",a:"Tékkland",r:1,date:"11. júní"},
+  {id:3,g:"B",h:"Kanada",a:"Bosníu-Herzeg.",r:1,date:"12. júní"},{id:4,g:"D",h:"Bandaríkin",a:"Paragvæ",r:1,date:"12. júní"},
+  {id:5,g:"B",h:"Katar",a:"Sviss",r:1,date:"13. júní"},{id:6,g:"C",h:"Brasilía",a:"Morokkó",r:1,date:"13. júní"},
+  {id:7,g:"C",h:"Haítí",a:"Skotland",r:1,date:"13. júní"},{id:8,g:"D",h:"Ástralía",a:"Tyrkland",r:1,date:"14. júní"},
+  {id:9,g:"E",h:"Þýskaland",a:"Curaçao",r:1,date:"14. júní"},{id:10,g:"F",h:"Holland",a:"Japan",r:1,date:"14. júní"},
+  {id:11,g:"E",h:"Fílabeinsstr.",a:"Ekvador",r:1,date:"14. júní"},{id:12,g:"F",h:"Svíþjóð",a:"Túnis",r:1,date:"14. júní"},
+  {id:13,g:"H",h:"Spánn",a:"Cape Verde",r:1,date:"15. júní"},{id:14,g:"G",h:"Belgía",a:"Egyptaland",r:1,date:"15. júní"},
+  {id:15,g:"H",h:"Saudi Arabia",a:"Úrúgvæ",r:1,date:"15. júní"},{id:16,g:"G",h:"Íran",a:"Nýja Sjáland",r:1,date:"15. júní"},
+  {id:17,g:"I",h:"Frakkland",a:"Senegal",r:1,date:"16. júní"},{id:18,g:"I",h:"Írak",a:"Noregur",r:1,date:"16. júní"},
+  {id:19,g:"J",h:"Argentína",a:"Alsír",r:1,date:"16. júní"},{id:20,g:"J",h:"Austuríki",a:"Jórdan",r:1,date:"17. júní"},
+  {id:21,g:"K",h:"Portúgal",a:"Kongó DR",r:1,date:"17. júní"},{id:22,g:"L",h:"England",a:"Króatía",r:1,date:"17. júní"},
+  {id:23,g:"L",h:"Gana",a:"Panama",r:1,date:"17. júní"},{id:24,g:"K",h:"Úsbekistan",a:"Kólumbía",r:1,date:"17. júní"},
+  {id:25,g:"A",h:"Tékkland",a:"Suður-Afríka",r:2,date:"18. júní"},{id:26,g:"B",h:"Sviss",a:"Bosníu-Herzeg.",r:2,date:"18. júní"},
+  {id:27,g:"B",h:"Kanada",a:"Katar",r:2,date:"18. júní"},{id:28,g:"A",h:"Mexíkó",a:"Suður-Kórea",r:2,date:"18. júní"},
+  {id:29,g:"D",h:"Bandaríkin",a:"Ástralía",r:2,date:"19. júní"},{id:30,g:"C",h:"Skotland",a:"Morokkó",r:2,date:"19. júní"},
+  {id:31,g:"C",h:"Brasilía",a:"Haítí",r:2,date:"19. júní"},{id:32,g:"D",h:"Tyrkland",a:"Paragvæ",r:2,date:"19. júní"},
+  {id:33,g:"F",h:"Holland",a:"Svíþjóð",r:2,date:"20. júní"},{id:34,g:"E",h:"Þýskaland",a:"Fílabeinsstr.",r:2,date:"20. júní"},
+  {id:35,g:"E",h:"Ekvador",a:"Curaçao",r:2,date:"20. júní"},{id:36,g:"F",h:"Túnis",a:"Japan",r:2,date:"21. júní"},
+  {id:37,g:"H",h:"Spánn",a:"Saudi Arabia",r:2,date:"21. júní"},{id:38,g:"G",h:"Belgía",a:"Íran",r:2,date:"21. júní"},
+  {id:39,g:"H",h:"Úrúgvæ",a:"Cape Verde",r:2,date:"21. júní"},{id:40,g:"G",h:"Nýja Sjáland",a:"Egyptaland",r:2,date:"21. júní"},
+  {id:41,g:"J",h:"Argentína",a:"Austuríki",r:2,date:"22. júní"},{id:42,g:"I",h:"Frakkland",a:"Írak",r:2,date:"22. júní"},
+  {id:43,g:"I",h:"Noregur",a:"Senegal",r:2,date:"22. júní"},{id:44,g:"J",h:"Jórdan",a:"Alsír",r:2,date:"22. júní"},
+  {id:45,g:"K",h:"Portúgal",a:"Úsbekistan",r:2,date:"23. júní"},{id:46,g:"L",h:"England",a:"Gana",r:2,date:"23. júní"},
+  {id:47,g:"L",h:"Panama",a:"Króatía",r:2,date:"23. júní"},{id:48,g:"K",h:"Kólumbía",a:"Kongó DR",r:2,date:"23. júní"},
+  {id:49,g:"B",h:"Sviss",a:"Kanada",r:3,date:"24. júní"},{id:50,g:"B",h:"Bosníu-Herzeg.",a:"Katar",r:3,date:"24. júní"},
+  {id:51,g:"C",h:"Skotland",a:"Brasilía",r:3,date:"24. júní"},{id:52,g:"C",h:"Morokkó",a:"Haítí",r:3,date:"24. júní"},
+  {id:53,g:"A",h:"Tékkland",a:"Mexíkó",r:3,date:"24. júní"},{id:54,g:"A",h:"Suður-Afríka",a:"Suður-Kórea",r:3,date:"24. júní"},
+  {id:55,g:"E",h:"Curaçao",a:"Fílabeinsstr.",r:3,date:"25. júní"},{id:56,g:"E",h:"Ekvador",a:"Þýskaland",r:3,date:"25. júní"},
+  {id:57,g:"F",h:"Japan",a:"Svíþjóð",r:3,date:"25. júní"},{id:58,g:"F",h:"Túnis",a:"Holland",r:3,date:"25. júní"},
+  {id:59,g:"D",h:"Tyrkland",a:"Bandaríkin",r:3,date:"25. júní"},{id:60,g:"D",h:"Paragvæ",a:"Ástralía",r:3,date:"25. júní"},
+  {id:61,g:"I",h:"Noregur",a:"Frakkland",r:3,date:"26. júní"},{id:62,g:"I",h:"Senegal",a:"Írak",r:3,date:"26. júní"},
+  {id:63,g:"H",h:"Cape Verde",a:"Saudi Arabia",r:3,date:"26. júní"},{id:64,g:"H",h:"Úrúgvæ",a:"Spánn",r:3,date:"26. júní"},
+  {id:65,g:"G",h:"Egyptaland",a:"Íran",r:3,date:"26. júní"},{id:66,g:"G",h:"Nýja Sjáland",a:"Belgía",r:3,date:"26. júní"},
+  {id:67,g:"L",h:"Panama",a:"England",r:3,date:"27. júní"},{id:68,g:"L",h:"Króatía",a:"Gana",r:3,date:"27. júní"},
+  {id:69,g:"K",h:"Kólumbía",a:"Portúgal",r:3,date:"27. júní"},{id:70,g:"K",h:"Kongó DR",a:"Úsbekistan",r:3,date:"27. júní"},
+  {id:71,g:"J",h:"Alsír",a:"Austuríki",r:3,date:"27. júní"},{id:72,g:"J",h:"Jórdan",a:"Argentína",r:3,date:"27. júní"}
+];
+
+const GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"];
+const API_KEY = '0bb6945d090b4e8d948443fe6b4255f9';
+const TEAM_MAP = {
+  "Mexico":"Mexíkó","South Africa":"Suður-Afríka","Korea Republic":"Suður-Kórea","South Korea":"Suður-Kórea",
+  "Czechia":"Tékkland","Czech Republic":"Tékkland","Canada":"Kanada",
+  "Bosnia and Herzegovina":"Bosníu-Herzeg.","Bosnia-Herzegovina":"Bosníu-Herzeg.",
+  "United States":"Bandaríkin","USA":"Bandaríkin","Paraguay":"Paragvæ",
+  "Qatar":"Katar","Switzerland":"Sviss","Brazil":"Brasilía","Morocco":"Morokkó",
+  "Haiti":"Haítí","Scotland":"Skotland","Australia":"Ástralía","Turkey":"Tyrkland","Türkiye":"Tyrkland",
+  "Germany":"Þýskaland","Curaçao":"Curaçao","Netherlands":"Holland","Japan":"Japan",
+  "Ivory Coast":"Fílabeinsstr.","Côte d'Ivoire":"Fílabeinsstr.","Côte D'Ivoire":"Fílabeinsstr.",
+  "Ecuador":"Ekvador","Sweden":"Svíþjóð","Tunisia":"Túnis",
+  "Spain":"Spánn","Cabo Verde":"Cape Verde","Cape Verde":"Cape Verde",
+  "Belgium":"Belgía","Egypt":"Egyptaland","Saudi Arabia":"Saudi Arabia","Uruguay":"Úrúgvæ",
+  "Iran":"Íran","IR Iran":"Íran","New Zealand":"Nýja Sjáland",
+  "France":"Frakkland","Senegal":"Senegal","Iraq":"Írak","Norway":"Noregur",
+  "Argentina":"Argentína","Algeria":"Alsír","Austria":"Austuríki","Jordan":"Jórdan",
+  "Portugal":"Portúgal","DR Congo":"Kongó DR","Congo DR":"Kongó DR",
+  "England":"England","Croatia":"Króatía","Ghana":"Gana","Panama":"Panama",
+  "Uzbekistan":"Úsbekistan","Colombia":"Kólumbía"
+};
+
+let results = {};
+
+// ── SCORING ──────────────────────────────────────────────────────────────────
+function getOutcome(h,a){return h>a?'H':a>h?'A':'D';}
+function scoreMatch(gh,ga,rh,ra){
+  if(gh==null||ga==null||rh==null||ra==null) return 0;
+  if(gh===rh&&ga===ra) return 3;
+  if(getOutcome(gh,ga)===getOutcome(rh,ra)) return 1;
+  return 0;
+}
+function computeStandings(res){
+  const s={};GROUPS.forEach(g=>s[g]={});
+  MATCHES.forEach(m=>{
+    const r=res[m.id];if(!r||r.h==null) return;
+    [m.h,m.a].forEach(t=>{if(!s[m.g][t])s[m.g][t]={pts:0,gd:0,gf:0};});
+    s[m.g][m.h].gf+=r.h;s[m.g][m.a].gf+=r.a;
+    s[m.g][m.h].gd+=r.h-r.a;s[m.g][m.a].gd+=r.a-r.h;
+    if(r.h>r.a) s[m.g][m.h].pts+=3;
+    else if(r.h===r.a){s[m.g][m.h].pts++;s[m.g][m.a].pts++;}
+    else s[m.g][m.a].pts+=3;
+  });
+  const sorted={};
+  GROUPS.forEach(g=>{sorted[g]=Object.entries(s[g]).sort((a,b)=>b[1].pts-a[1].pts||b[1].gd-a[1].gd||b[1].gf-a[1].gf).map(([t])=>t);});
+  return sorted;
+}
+function computeScore(playerName){
+  const g=GUESSES[playerName];
+  let exact=0,outcome=0,adv=0;
+  MATCHES.forEach(m=>{
+    const pg=g[m.id],r=results[m.id];if(!pg||!r) return;
+    const pts=scoreMatch(pg[0],pg[1],r.h,r.a);
+    if(pts===3) exact++;else if(pts===1) outcome++;
+  });
+  const realS=computeStandings(results),realAdv=new Set();
+  GROUPS.forEach(grp=>(realS[grp]||[]).slice(0,2).forEach(t=>realAdv.add(t)));
+  const predS=computeStandings(Object.fromEntries(Object.entries(g).map(([k,v])=>[k,{h:v[0],a:v[1]}])));
+  const predAdv=new Set();
+  GROUPS.forEach(grp=>(predS[grp]||[]).slice(0,2).forEach(t=>predAdv.add(t)));
+  realAdv.forEach(t=>{if(predAdv.has(t)) adv++;});
+  return{total:exact*3+outcome+adv*2,exact,outcome,adv};
+}
+function getAllScores(){
+  return PLAYERS.map(p=>({...p,score:computeScore(p.name)})).sort((a,b)=>b.score.total-a.score.total);
+}
+
+// ── FETCH ────────────────────────────────────────────────────────────────────
+async function fetchAndUpdate(){
+  const btn=document.getElementById('refresh-btn');
+  const status=document.getElementById('refresh-status');
+  const errBar=document.getElementById('error-bar');
+  btn.disabled=true;btn.textContent='↻ Sæki...';
+  status.textContent='Tengist football-data.org...';
+  errBar.style.display='none';
+  try{
+    const resp=await fetch('https://api.football-data.org/v4/competitions/WC/matches?stage=GROUP_STAGE&season=2026',{
+      headers:{'X-Auth-Token':API_KEY}
+    });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    let count=0;
+    (data.matches||[]).forEach(m=>{
+      if(m.status!=='FINISHED') return;
+      const hName=TEAM_MAP[m.homeTeam.name]||m.homeTeam.name;
+      const aName=TEAM_MAP[m.awayTeam.name]||m.awayTeam.name;
+      const match=MATCHES.find(x=>x.h===hName&&x.a===aName);
+      if(match&&m.score?.fullTime?.home!=null){
+        results[match.id]={h:m.score.fullTime.home,a:m.score.fullTime.away};
+        count++;
+      }
+    });
+    const now=new Date().toLocaleTimeString('is-IS',{hour:'2-digit',minute:'2-digit'});
+    status.textContent=`Síðast uppfært ${now}`;
+    document.getElementById('hdr-matches').textContent=count+' leikir spilaðir';
+    document.getElementById('hdr-updated').textContent='Uppfært '+now;
+    renderAll();
+  }catch(e){
+    status.textContent='Villa við að sækja gögn';
+    errBar.textContent='Gat ekki sótt niðurstöður: '+e.message+'. Athugaðu internetsamband.';
+    errBar.style.display='block';
+  }
+  btn.disabled=false;btn.textContent='↻ Uppfæra';
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderAll(){renderLeaderboard();renderStats();renderMatches();}
+
+function renderLeaderboard(){
+  const scored=getAllScores();
+  const played=Object.keys(results).length;
+  document.getElementById('lb-subtitle').textContent=played+'/72 leikir';
+  const maxPts=scored[0]?.score.total||1;
+  const medals=['🥇','🥈','🥉'];
+  document.getElementById('lb-list').innerHTML=scored.map((p,i)=>{
+    const initials=p.display.slice(0,2).toUpperCase();
+    const barPct=maxPts>0?Math.round((p.score.total/maxPts)*100):0;
+    return `<div class="lb-row${i===0?' gold':''}">
+      <div class="lb-rank${i<3?'':' num'}">${i<3?medals[i]:i+1}</div>
+      <div class="lb-avatar">${initials}</div>
+      <div class="lb-info">
+        <div class="lb-name">${p.display}</div>
+        <div class="lb-bar-wrap"><div class="lb-bar" style="width:${barPct}%"></div></div>
+        <div class="lb-detail"><span class="ex">${p.score.exact} nákvæm</span> · ${p.score.outcome} úrslit${p.score.adv>0?' · <span class="adv">'+p.score.adv+' framg.</span>':''}</div>
+      </div>
+      <div class="lb-pts-wrap"><div class="lb-pts">${p.score.total}</div><div class="lb-pts-lbl">stig</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderStats(){
+  const scored=getAllScores();
+  const played=Object.keys(results).length;
+  const leader=scored[0];
+  const mostExact=scored.reduce((a,b)=>a.score.exact>=b.score.exact?a:b);
+  const mostOutcome=[...scored].sort((a,b)=>b.score.outcome-a.score.outcome)[0];
+  const tightest=scored.length>1?leader.score.total-scored[1].score.total:0;
+
+  document.getElementById('stats-grid').innerHTML=[
+    {label:'Leikir spilaðir',val:played+'/72',sub:'riðlakeppni'},
+    {label:'Leiðandi',val:leader?.display||'—',sub:leader?leader.score.total+' stig':''},
+    {label:'Flest nákvæm',val:mostExact?.display||'—',sub:mostExact?mostExact.score.exact+' nákvæm úrslit':''},
+    {label:'Flest rétt úrslit',val:mostOutcome?.display||'—',sub:mostOutcome?mostOutcome.score.outcome+' rétt niðurstaða':''},
+    {label:'Munur á 1.-2.',val:tightest+' stig',sub:scored.length>1?scored[0].display+' vs '+scored[1].display:''},
+    {label:'Þátttakendur',val:'11',sub:'keppendur'},
+  ].map(s=>`<div class="stat-card"><div class="stat-label">${s.label}</div><div class="stat-value">${s.val}</div><div class="stat-sub">${s.sub}</div></div>`).join('');
+
+  // Per-player table
+  document.getElementById('stat-tbody').innerHTML=scored.map(p=>`
+    <tr>
+      <td><strong>${p.display}</strong></td>
+      <td class="${p.score.exact===Math.max(...scored.map(x=>x.score.exact))?'hi':''}">${p.score.exact} (${p.score.exact*3})</td>
+      <td>${p.score.outcome}</td>
+      <td style="color:var(--green)">${p.score.adv} (${p.score.adv*2})</td>
+      <td class="hi">${p.score.total}</td>
+    </tr>`).join('');
+
+  // Fun facts
+  const facts=[];
+  // Most popular score prediction for match 1
+  const m1guesses=PLAYERS.map(p=>GUESSES[p.name][1]).map(g=>g[0]+'-'+g[1]);
+  const m1counts={};m1guesses.forEach(g=>m1counts[g]=(m1counts[g]||0)+1);
+  const m1top=Object.entries(m1counts).sort((a,b)=>b[1]-a[1])[0];
+  facts.push(`🔮 Vinsælasta tippið á leik #1 (Mexíkó–Suður-Afríka) var <strong>${m1top[0]}</strong> — giskaðir af ${m1top[1]} þátttakendum.`);
+
+  // Who had most 0-0 predictions
+  const zerozero=PLAYERS.map(p=>({name:p.display,count:Object.values(GUESSES[p.name]).filter(g=>g[0]===0&&g[1]===0).length})).sort((a,b)=>b.count-a.count)[0];
+  if(zerozero.count>0) facts.push(`😴 <strong>${zerozero.name}</strong> trúir mest á leiðinlegar leikjur — ${zerozero.count} tipp á 0-0.`);
+
+  // Highest single score prediction
+  let highGoal={player:'',match:0,score:'',goals:0};
+  PLAYERS.forEach(p=>Object.entries(GUESSES[p.name]).forEach(([mid,g])=>{
+    const tot=g[0]+g[1];if(tot>highGoal.goals){highGoal={player:p.display,match:mid,score:g[0]+'-'+g[1],goals:tot};}
+  }));
+  facts.push(`🚀 Hámarkstipp: <strong>${highGoal.player}</strong> tippaði ${highGoal.score} í leik #${highGoal.match} — ${highGoal.goals} mörk í einum leik!`);
+
+  // Agreement on match 9 (Germany vs Curacao)
+  const m9=PLAYERS.map(p=>GUESSES[p.name][9]).map(g=>g[0]+'-'+g[1]);
+  const m9counts={};m9.forEach(g=>m9counts[g]=(m9counts[g]||0)+1);
+  const m9top=Object.entries(m9counts).sort((a,b)=>b[1]-a[1])[0];
+  facts.push(`🇩🇪 Leik #9 (Þýskaland–Curaçao): ${m9top[1]} af 11 tippu <strong>${m9top[0]}</strong>.`);
+
+  if(played>0){
+    // Who scored in round 1
+    const r1matches=MATCHES.filter(m=>m.r===1&&results[m.id]);
+    const r1scores=PLAYERS.map(p=>({name:p.display,pts:r1matches.reduce((s,m)=>{
+      const g=GUESSES[p.name][m.id],r=results[m.id];return s+(g&&r?scoreMatch(g[0],g[1],r.h,r.a):0);
+    },0)})).sort((a,b)=>b.pts-a.pts);
+    if(r1scores[0].pts>0) facts.push(`⚡ Í umferð 1 er <strong>${r1scores[0].name}</strong> best með ${r1scores[0].pts} stig.`);
+  }
+
+  document.getElementById('fun-facts').innerHTML=facts.map(f=>`<div style="padding:8px 12px;background:var(--bg);border-radius:var(--radius);font-size:13px;line-height:1.5">${f}</div>`).join('');
+}
+
+function renderMatches(){
+  const rndNames={1:'Umferð 1  ·  11.–17. júní',2:'Umferð 2  ·  18.–23. júní',3:'Lokaumferð  ·  24.–27. júní'};
+  let html='';
+  [1,2,3].forEach(rnd=>{
+    html+=`<div class="match-group"><div class="match-group-title">${rndNames[rnd]}</div>`;
+    MATCHES.filter(m=>m.r===rnd).forEach(m=>{
+      const r=results[m.id];
+      const score=r?`${r.h}–${r.a}`:'·–·';
+      const cls=r?'done':'';
+      html+=`<div class="match-row">
+        <span class="match-num">${m.id}</span>
+        <span class="match-grp">${m.g}</span>
+        <span class="match-home">${m.h}</span>
+        <span class="match-score ${cls}">${score}</span>
+        <span class="match-away">${m.a}</span>
+        <span class="match-date">${m.date}</span>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('matches-list').innerHTML=html;
+}
+
+function showSection(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderAll();
+fetchAndUpdate();
+setInterval(fetchAndUpdate, 5*60*1000); // refresh every 5 min
+</script>
+</body>
+</html>
