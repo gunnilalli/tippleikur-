@@ -79,7 +79,7 @@ a{color:var(--blue);text-decoration:none}
 .stat-table tr:hover td{background:#f7f8fa}
 .stat-table .hi{color:var(--blue);font-weight:700}
 
-/* Matche s */
+/* Matches */
 .match-group{margin-bottom:20px}
 .match-group-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-bottom:8px;font-weight:600}
 .match-row{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--card);border-radius:var(--radius);margin-bottom:3px;box-shadow:var(--shadow);font-size:13px}
@@ -321,23 +321,32 @@ function computeStandings(res){
 function computeScore(playerName){
   const g=GUESSES[playerName];
   let exact=0,outcome=0,adv=0;
+
+  // Match points
   MATCHES.forEach(m=>{
-    const pg=g[m.id],r=results[m.id];if(!pg||!r) return;
+    const pg=g[m.id],r=results[m.id];
+    if(!pg||!r) return;
     const pts=scoreMatch(pg[0],pg[1],r.h,r.a);
-    if(pts===3) exact++;else if(pts===1) outcome++;
+    if(pts===3) exact++;
+    else if(pts===1) outcome++;
   });
-  // Only award advancement points when all 6 matches in a group are finished
-  const realS=computeStandings(results),realAdv=new Set();
-  const predS=computeStandings(Object.fromEntries(Object.entries(g).map(([k,v])=>[k,{h:v[0],a:v[1]}])));
-  const predAdv=new Set();
+
+  // Advancement points — only when ALL 6 matches in a group are done
+  const realS=computeStandings(results);
+  // Build player guess results in {id: {h,a}} format for computeStandings
+  const playerRes={};
+  Object.entries(g).forEach(([k,v])=>{ playerRes[parseInt(k)]={h:v[0],a:v[1]}; });
+  const predS=computeStandings(playerRes);
+
   GROUPS.forEach(grp=>{
     const grpMatches=MATCHES.filter(m=>m.g===grp);
-    const grpDone=grpMatches.every(m=>results[m.id]!=null);
-    if(!grpDone) return; // skip group if not all matches played
-    (realS[grp]||[]).slice(0,2).forEach(t=>realAdv.add(t));
-    (predS[grp]||[]).slice(0,2).forEach(t=>predAdv.add(t));
+    const allDone=grpMatches.every(m=>results[m.id]!=null);
+    if(!allDone) return;
+    const realTop=(realS[grp]||[]).slice(0,2);
+    const predTop=new Set((predS[grp]||[]).slice(0,2));
+    realTop.forEach(t=>{ if(predTop.has(t)) adv++; });
   });
-  realAdv.forEach(t=>{if(predAdv.has(t)) adv++;});
+
   return{total:exact*3+outcome+adv*2,exact,outcome,adv};
 }
 function getAllScores(){
