@@ -437,10 +437,10 @@ function initAdmin(){
   const isAdmin=window.location.search.includes('admin');
   if(!isAdmin) return;
   // Hide public UI
-  document.querySelector('.header').style.display='none';
-  document.querySelector('.nav').style.display='none';
-  document.querySelector('.page').style.display='none';
-  document.getElementById('admin-root').style.display='block';
+  const els=['.header','.nav','.page'];
+  els.forEach(sel=>{const el=document.querySelector(sel);if(el) el.style.display='none';});
+  const ar=document.getElementById('admin-root');
+  if(ar) ar.style.display='block';
 }
 
 function tryAdminLogin(){
