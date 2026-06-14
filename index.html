@@ -135,6 +135,7 @@ a{color:var(--blue);text-decoration:none}
   .stats-grid{grid-template-columns:1fr 1fr}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 </head>
 <body>
 
@@ -152,6 +153,7 @@ a{color:var(--blue);text-decoration:none}
 <div class="nav">
   <div class="nav-inner">
     <button class="nav-btn active" onclick="showSection('leaderboard')">🏆 Stigatafla</button>
+    <button class="nav-btn" onclick="showSection('development')">📈 Þróun</button>
     <button class="nav-btn" onclick="showSection('stats')">📊 Tölfræði</button>
     <button class="nav-btn" onclick="showSection('matches')">📋 Leikir</button>
   </div>
@@ -169,6 +171,29 @@ a{color:var(--blue);text-decoration:none}
     <div class="card">
       <div class="card-header"><h2>Stigatafla</h2><span id="lb-subtitle" style="font-size:12px;color:var(--text2)"></span></div>
       <div id="lb-list"></div>
+    </div>
+  </div>
+
+
+  <!-- DEVELOPMENT -->
+  <div class="section" id="section-development">
+    <div class="card">
+      <div class="card-header"><h2>Þróun röðunar</h2><span style="font-size:12px;color:var(--text2)">1. sæti efst — línan sýnir hvernig röðunin breytist eftir hverjum leik</span></div>
+      <div class="card-body">
+        <div id="race-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;font-size:12px;color:var(--text2)"></div>
+        <div style="position:relative;width:100%;height:420px;">
+          <canvas id="raceChart" role="img" aria-label="Keppnisrit sem sýnir þróun röðunar þátttakenda eftir hverjum leik">Keppnisrit fyrir HM 2026 tippleik.</canvas>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h2>Stigaþróun</h2><span style="font-size:12px;color:var(--text2)">Uppsafnaður stigafjöldi eftir hverjum leik</span></div>
+      <div class="card-body">
+        <div id="pts-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;font-size:12px;color:var(--text2)"></div>
+        <div style="position:relative;width:100%;height:380px;">
+          <canvas id="ptsChart" role="img" aria-label="Línurit sem sýnir uppsafnaðar stigur þátttakenda eftir hverjum leik">Stigaþróunarrit.</canvas>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -478,7 +503,7 @@ function saveAllResults(){
 }
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
-function renderAll(){renderLeaderboard();renderStats();renderMatches();}
+function renderAll(){renderLeaderboard();renderStats();renderMatches();if(document.getElementById("section-development").classList.contains("active")) renderDevelopment();}
 
 function renderLeaderboard(){
   const scored=getAllScores();
@@ -590,10 +615,128 @@ function renderMatches(){
 }
 
 function showSection(id){
+  if(id==='development') renderDevelopment();
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('section-'+id).classList.add('active');
   event.currentTarget.classList.add('active');
+}
+
+
+const PLAYER_COLORS = [
+  '#378ADD','#639922','#D85A30','#D4537E','#BA7517',
+  '#1D9E75','#7F77DD','#E24B4A','#5F5E5A','#0F6E56','#993C1D'
+];
+const PLAYER_NAMES = ['Gunnar','Sprölli','Illugi','Svet','Jóki','Meddi','Marri','Fáni','Hroar','Formy','Geimur'];
+
+let raceChartInst = null;
+let ptsChartInst = null;
+
+function renderDevelopment(){
+  const playedIds = Object.keys(results).map(Number).sort((a,b)=>a-b);
+  if(playedIds.length === 0){
+    document.getElementById('race-legend').innerHTML = '<span style="color:var(--text3)">Engin leikjaúrslit enn</span>';
+    document.getElementById('pts-legend').innerHTML = '';
+    return;
+  }
+
+  const labels = playedIds.map(i => 'L'+i);
+
+  // Cumulative points per player per match
+  const cumPts = {};
+  PLAYER_NAMES.forEach(p => {
+    cumPts[p] = [];
+    let total = 0;
+    playedIds.forEach(id => {
+      const r = results[id];
+      const g = GUESSES[p] ? GUESSES[p][id] : null;
+      if(r && g) total += scoreMatch(g[0],g[1],r.h,r.a);
+      cumPts[p].push(total);
+    });
+  });
+
+  // Rankings after each match
+  const rankings = {};
+  PLAYER_NAMES.forEach(p => rankings[p] = []);
+  playedIds.forEach((id, idx) => {
+    const pts = PLAYER_NAMES.map(p => ({p, v: cumPts[p][idx]}));
+    pts.sort((a,b) => b.v - a.v);
+    pts.forEach((x, i) => { rankings[x.p].push(i+1); });
+  });
+
+  const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const tickColor = isDark ? '#aaa' : '#888';
+
+  // Race chart
+  const raceDatasets = PLAYER_NAMES.map((p,i) => ({
+    label: p, data: rankings[p],
+    borderColor: PLAYER_COLORS[i], backgroundColor: PLAYER_COLORS[i],
+    borderWidth: 2.5, pointRadius: 3, pointHoverRadius: 6,
+    tension: 0.3, fill: false
+  }));
+
+  if(raceChartInst) raceChartInst.destroy();
+  raceChartInst = new Chart(document.getElementById('raceChart'), {
+    type: 'line',
+    data: { labels, datasets: raceDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: ctx => 'Eftir leik ' + ctx[0].label.replace('L',''),
+          label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + '. sæti'
+        }}
+      },
+      scales: {
+        y: { reverse: true, min: 1, max: 11, ticks: { stepSize:1, color:tickColor, callback: v=>v+'.' }, grid:{color:gridColor} },
+        x: { ticks: { color:tickColor, autoSkip: playedIds.length > 20 }, grid:{color:gridColor} }
+      }
+    }
+  });
+
+  // Points chart
+  const ptsDatasets = PLAYER_NAMES.map((p,i) => ({
+    label: p, data: cumPts[p],
+    borderColor: PLAYER_COLORS[i], backgroundColor: PLAYER_COLORS[i],
+    borderWidth: 2, pointRadius: 2, pointHoverRadius: 5,
+    tension: 0.3, fill: false
+  }));
+
+  if(ptsChartInst) ptsChartInst.destroy();
+  ptsChartInst = new Chart(document.getElementById('ptsChart'), {
+    type: 'line',
+    data: { labels, datasets: ptsDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          title: ctx => 'Eftir leik ' + ctx[0].label.replace('L',''),
+          label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' stig'
+        }}
+      },
+      scales: {
+        y: { min: 0, ticks: { color:tickColor }, grid:{color:gridColor} },
+        x: { ticks: { color:tickColor, autoSkip: playedIds.length > 20 }, grid:{color:gridColor} }
+      }
+    }
+  });
+
+  // Legends
+  const lastIdx = playedIds.length - 1;
+  const finalRanks = PLAYER_NAMES.map((p,i) => ({p, i, rank: rankings[p][lastIdx], pts: cumPts[p][lastIdx]}));
+  finalRanks.sort((a,b) => a.rank - b.rank);
+
+  ['race-legend','pts-legend'].forEach(id => {
+    document.getElementById(id).innerHTML = finalRanks.map(({p,i,rank,pts}) =>
+      `<span style="display:flex;align-items:center;gap:5px">
+        <span style="width:14px;height:3px;border-radius:2px;background:${PLAYER_COLORS[i]};display:inline-block"></span>
+        <span>${rank}. ${p} <span style="opacity:0.6">(${pts}p)</span></span>
+      </span>`
+    ).join('');
+  });
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
