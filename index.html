@@ -346,7 +346,7 @@ const TEAM_MAP = {
   "Germany":"Þýskaland","Curaçao":"Curaçao","Netherlands":"Holland","Japan":"Japan",
   "Ivory Coast":"Fílabeinsstr.","Côte d'Ivoire":"Fílabeinsstr.","Côte D'Ivoire":"Fílabeinsstr.",
   "Ecuador":"Ekvador","Sweden":"Svíþjóð","Tunisia":"Túnis",
-  "Spain":"Spánn","Cabo Verde":"Cape Verde","Cape Verde":"Cape Verde",
+  "Spain":"Spánn","España":"Spánn","Cabo Verde":"Cape Verde","Cape Verde":"Cape Verde","Cabo Verde Islands":"Cape Verde",
   "Belgium":"Belgía","Egypt":"Egyptaland","Saudi Arabia":"Saudi Arabia","Uruguay":"Úrúgvæ",
   "Iran":"Íran","IR Iran":"Íran","New Zealand":"Nýja Sjáland",
   "France":"Frakkland","Senegal":"Senegal","Iraq":"Írak","Norway":"Noregur",
@@ -474,9 +474,10 @@ let adminUnlocked=false;
 function initAdmin(){
   const isAdmin=window.location.search.includes('admin');
   if(!isAdmin) return;
-  // Hide public UI
-  const els=['.header','.nav','.page'];
-  els.forEach(sel=>{const el=document.querySelector(sel);if(el) el.style.display='none';});
+  // Hide public UI - hide all direct children of body except admin-root
+  document.querySelectorAll('body > *:not(#admin-root):not(script)').forEach(el=>{
+    el.style.display='none';
+  });
   const ar=document.getElementById('admin-root');
   if(ar) ar.style.display='block';
 }
