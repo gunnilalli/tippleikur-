@@ -128,6 +128,24 @@ a{color:var(--blue);text-decoration:none}
 .save-all-btn:hover{background:#25873a}
 .saved-msg{text-align:center;color:var(--green);font-size:13px;font-weight:600;margin-top:8px;display:none}
 
+
+/* Breakdown grid */
+.bd-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.bd-table{border-collapse:collapse;font-size:12px;min-width:100%}
+.bd-table th{padding:4px 6px;text-align:center;font-weight:600;color:var(--text2);border-bottom:2px solid var(--border);white-space:nowrap;position:sticky;top:0;background:#fff;z-index:2}
+.bd-table th.name-col{text-align:left;position:sticky;left:0;background:#fff;z-index:3;min-width:90px}
+.bd-table td{padding:3px 4px;text-align:center;border-bottom:1px solid var(--border)}
+.bd-table td.name-col{text-align:left;font-weight:600;font-size:13px;padding:4px 8px;position:sticky;left:0;background:inherit;z-index:1;white-space:nowrap}
+.bd-table tr:nth-child(even) td{background:#f8fafc}
+.bd-table tr:nth-child(even) td.name-col{background:#f8fafc}
+.bd-table tr:nth-child(odd) td.name-col{background:#fff}
+.bd-cell{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;font-size:11px;font-weight:700}
+.bd-exact{background:#2d9e44;color:#fff}
+.bd-outcome{background:#dbeafe;color:#1877f2}
+.bd-wrong{background:#f3f4f6;color:#9ca3af}
+.bd-table td.total-col{font-weight:800;color:var(--blue);font-size:13px;padding:4px 8px;border-left:2px solid var(--border)}
+.bd-match-score{font-size:9px;color:var(--text3);display:block;line-height:1}
+
 /* Responsive */
 @media(max-width:480px){
   .nav-btn{padding:10px 12px;font-size:13px}
@@ -155,6 +173,7 @@ a{color:var(--blue);text-decoration:none}
     <button class="nav-btn active" onclick="showSection('leaderboard')">🏆 Stigatafla</button>
     <button class="nav-btn" onclick="showSection('development')">📈 Þróun</button>
     <button class="nav-btn" onclick="showSection('stats')">📊 Tölfræði</button>
+    <button class="nav-btn" onclick="showSection('breakdown')">🔍 Uppspretta</button>
     <button class="nav-btn" onclick="showSection('matches')">📋 Leikir</button>
   </div>
 </div>
@@ -192,6 +211,25 @@ a{color:var(--blue);text-decoration:none}
         <div id="pts-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;font-size:12px;color:var(--text2)"></div>
         <div style="position:relative;width:100%;height:380px;">
           <canvas id="ptsChart" role="img" aria-label="Línurit sem sýnir uppsafnaðar stigur þátttakenda eftir hverjum leik">Stigaþróunarrit.</canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- BREAKDOWN -->
+  <div class="section" id="section-breakdown">
+    <div class="card">
+      <div class="card-header">
+        <h2>Uppspretta stiga</h2>
+        <span style="font-size:12px;color:var(--text2)"><span style="color:#2d9e44;font-weight:700">✓</span> nákvæmt (3p) &nbsp; <span style="color:#1877f2;font-weight:700">○</span> rétt úrslit (1p) &nbsp; <span style="color:#9ca3af">✗</span> rangt</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="bd-wrap">
+          <table class="bd-table" id="bd-table">
+            <thead id="bd-thead"></thead>
+            <tbody id="bd-tbody"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -503,7 +541,7 @@ function saveAllResults(){
 }
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
-function renderAll(){renderLeaderboard();renderStats();renderMatches();if(document.getElementById("section-development").classList.contains("active")) renderDevelopment();}
+function renderAll(){renderLeaderboard();renderStats();renderMatches();if(document.getElementById("section-development").classList.contains("active")) renderDevelopment();if(document.getElementById("section-breakdown").classList.contains("active")) renderBreakdown();}
 
 function renderLeaderboard(){
   const scored=getAllScores();
@@ -616,6 +654,7 @@ function renderMatches(){
 
 function showSection(id){
   if(id==='development') renderDevelopment();
+  if(id==='breakdown') renderBreakdown();
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('section-'+id).classList.add('active');
@@ -737,6 +776,47 @@ function renderDevelopment(){
       </span>`
     ).join('');
   });
+}
+
+
+function renderBreakdown(){
+  const playedIds = Object.keys(results).map(Number).sort((a,b)=>a-b);
+  if(playedIds.length === 0){
+    document.getElementById('bd-thead').innerHTML = '';
+    document.getElementById('bd-tbody').innerHTML = '<tr><td colspan="2" style="padding:24px;color:var(--text3);text-align:center">Engin leikjaúrslit enn</td></tr>';
+    return;
+  }
+
+  const scored = getAllScores();
+
+  // Header
+  let thead = '<tr><th class="name-col">Nafn</th>';
+  playedIds.forEach(mid => {
+    const r = results[mid];
+    thead += `<th><span style="font-size:11px">${mid}</span><span class="bd-match-score">${r.h}-${r.a}</span></th>`;
+  });
+  thead += '<th style="border-left:2px solid var(--border)">Stig</th></tr>';
+  document.getElementById('bd-thead').innerHTML = thead;
+
+  // Body
+  let tbody = '';
+  scored.forEach(p => {
+    const g = GUESSES[p.name];
+    tbody += `<tr><td class="name-col">${p.display}</td>`;
+    playedIds.forEach(mid => {
+      const r = results[mid];
+      const pg = g ? g[mid] : null;
+      let cls = 'bd-wrong', sym = '✗';
+      if(pg && r){
+        const s = scoreMatch(pg[0],pg[1],r.h,r.a);
+        if(s===3){ cls='bd-exact'; sym='✓'; }
+        else if(s===1){ cls='bd-outcome'; sym='○'; }
+      }
+      tbody += `<td><span class="bd-cell ${cls}">${sym}</span></td>`;
+    });
+    tbody += `<td class="total-col">${p.score.total}</td></tr>`;
+  });
+  document.getElementById('bd-tbody').innerHTML = tbody;
 }
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
