@@ -387,7 +387,7 @@ function computeScore(playerName){
 
   // Match points
   MATCHES.forEach(m=>{
-    const pg=g[m.id],r=results[m.id];
+    const pg=g[m.id]||g[String(m.id)],r=results[m.id];
     if(!pg||!r) return;
     const pts=scoreMatch(pg[0],pg[1],r.h,r.a);
     if(pts===3) exact++;
