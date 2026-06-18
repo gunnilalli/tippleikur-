@@ -352,7 +352,7 @@ const TEAM_MAP = {
   "France":"Frakkland","Senegal":"Senegal","Iraq":"Írak","Norway":"Noregur",
   "Argentina":"Argentína","Algeria":"Alsír","Austria":"Austuríki","Jordan":"Jórdan",
   "Portugal":"Portúgal","DR Congo":"Kongó DR","Congo DR":"Kongó DR",
-  "England":"England","Croatia":"Króatía","Ghana":"Gana","Panama":"Panama",
+  "England":"England","Croatia":"Króatía","Ghana":"Gana","Ghana (Republic)":"Gana","Panama":"Panama","Panamá":"Panama",
   "Uzbekistan":"Úsbekistan","Colombia":"Kólumbía"
 };
 
@@ -472,14 +472,20 @@ const ADMIN_PASS='KR1899';
 let adminUnlocked=false;
 
 function initAdmin(){
-  const isAdmin=window.location.search.includes('admin');
-  if(!isAdmin) return;
-  // Hide public UI - hide all direct children of body except admin-root
-  document.querySelectorAll('body > *:not(#admin-root):not(script)').forEach(el=>{
-    el.style.display='none';
-  });
-  const ar=document.getElementById('admin-root');
-  if(ar) ar.style.display='block';
+  if(!window.location.search.includes('admin')) return;
+  // Wait for DOM then hide everything except admin-root
+  function doHide(){
+    document.querySelectorAll('body > *').forEach(el=>{
+      if(el.id !== 'admin-root' && el.tagName !== 'SCRIPT' && el.tagName !== 'STYLE') el.style.display='none';
+    });
+    const ar=document.getElementById('admin-root');
+    if(ar){ ar.style.display='block'; }
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', doHide);
+  } else {
+    doHide();
+  }
 }
 
 function tryAdminLogin(){
