@@ -336,6 +336,13 @@ const MATCHES = [
 
 const GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"];
 const API_KEY = '0bb6945d090b4e8d948443fe6b4255f9';
+
+// Known correct results that override API errors
+// Format: { matchId: [home, away] }
+const RESULT_OVERRIDES = {
+  13: [0, 0],  // Spánn 0-0 Cape Verde
+  37: [4, 0],  // Spánn 4-0 Saudi Arabia
+};
 const TEAM_MAP = {
   "Mexico":"Mexíkó","South Africa":"Suður-Afríka","Korea Republic":"Suður-Kórea","South Korea":"Suður-Kórea",
   "Czechia":"Tékkland","Czech Republic":"Tékkland","Canada":"Kanada",
@@ -440,9 +447,16 @@ async function fetchAndUpdate(){
       const aName=TEAM_MAP[m.awayTeam.name]||m.awayTeam.name;
       const match=MATCHES.find(x=>x.h===hName&&x.a===aName);
       if(match&&m.score?.fullTime?.home!=null){
-        results[match.id]={h:m.score.fullTime.home,a:m.score.fullTime.away,auto:true};
-        count++;
+        // Don't overwrite manually entered results
+        if(!results[match.id]||results[match.id].auto!==false){
+          results[match.id]={h:m.score.fullTime.home,a:m.score.fullTime.away,auto:true};
+          count++;
+        }
       }
+    });
+    // Apply known correct overrides
+    Object.entries(RESULT_OVERRIDES).forEach(([id,r])=>{
+      results[parseInt(id)]={h:r[0],a:r[1],auto:true};
     });
     saveResults();
     const now=new Date().toLocaleTimeString('is-IS',{hour:'2-digit',minute:'2-digit'});
@@ -828,6 +842,11 @@ function renderBreakdown(){
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 loadResults();
+// Apply known correct overrides, always
+Object.entries(RESULT_OVERRIDES).forEach(([id,r])=>{
+  results[parseInt(id)]={h:r[0],a:r[1],auto:true};
+});
+saveResults();
 initAdmin();
 if(!window.location.search.includes('admin')){
   renderAll();
