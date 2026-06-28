@@ -146,6 +146,30 @@ a{color:var(--blue);text-decoration:none}
 .bd-table td.total-col{font-weight:800;color:var(--blue);font-size:13px;padding:4px 8px;border-left:2px solid var(--border)}
 .bd-match-score{font-size:9px;color:var(--text3);display:block;line-height:1}
 
+
+/* Knockout tab */
+.ko-section{margin-bottom:24px}
+.ko-section-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--text2);margin-bottom:10px;font-weight:600;padding:0 4px}
+.ko-match{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:6px;overflow:hidden}
+.ko-match-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border)}
+.ko-match-teams{flex:1;font-size:13px;font-weight:600;color:var(--text)}
+.ko-match-score{font-size:13px;font-weight:700;color:var(--blue);min-width:36px;text-align:center}
+.ko-match-score.pending{color:var(--text3)}
+.ko-guesses{display:flex;flex-wrap:wrap;gap:4px;padding:6px 12px}
+.ko-guess{display:flex;align-items:center;gap:5px;font-size:11px;background:var(--bg);border-radius:4px;padding:3px 7px}
+.ko-guess .name{color:var(--text2);font-weight:500}
+.ko-guess .score{font-weight:700}
+.ko-guess.exact{background:#ebfbee;color:var(--green)}
+.ko-guess.correct{background:var(--blue-bg);color:var(--blue)}
+.ko-guess.wrong{color:var(--text3)}
+.ko-bonus-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.ko-bonus-card{background:var(--card);border-radius:var(--radius-lg);padding:14px 16px;box-shadow:var(--shadow)}
+.ko-bonus-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.ko-bonus-result{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px}
+.ko-bonus-guesses{font-size:12px;color:var(--text2);display:flex;flex-direction:column;gap:3px}
+.ko-bonus-guess{display:flex;justify-content:space-between}
+.ko-bonus-guess.hit{color:var(--green);font-weight:600}
+
 /* Responsive */
 @media(max-width:480px){
   .nav-btn{padding:10px 12px;font-size:13px}
@@ -171,6 +195,7 @@ a{color:var(--blue);text-decoration:none}
 <div class="nav">
   <div class="nav-inner">
     <button class="nav-btn active" onclick="showSection('leaderboard')">🏆 Stigatafla</button>
+    <button class="nav-btn" onclick="showSection('knockout')">🏆 Útsláttarkeppni</button>
     <button class="nav-btn" onclick="showSection('development')">📈 Þróun</button>
     <button class="nav-btn" onclick="showSection('stats')">📊 Tölfræði</button>
     <button class="nav-btn" onclick="showSection('breakdown')">🔍 Uppspretta</button>
@@ -217,6 +242,18 @@ a{color:var(--blue);text-decoration:none}
   </div>
 
 
+
+  <!-- KNOCKOUT -->
+  <div class="section" id="section-knockout">
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><h2>Bónusgiskur</h2></div>
+      <div class="card-body" style="padding:12px 16px">
+        <div class="ko-bonus-grid" id="ko-bonus-grid"></div>
+      </div>
+    </div>
+    <div id="ko-matches"></div>
+  </div>
+
   <!-- BREAKDOWN -->
   <div class="section" id="section-breakdown">
     <div class="card">
@@ -247,7 +284,11 @@ a{color:var(--blue);text-decoration:none}
             <th>Nákvæm ×3</th>
             <th>Úrslit ×1</th>
             <th>Framg. ×2</th>
-            <th style="color:var(--blue)">Samtals</th>
+            <th style="color:var(--blue)">Riðill</th>
+            <th style="color:#f59e0b">Útsl. leikir</th>
+            <th style="color:#f59e0b">Bónus</th>
+            <th style="color:#f59e0b">Útslátt</th>
+            <th style="color:#2d9e44;font-weight:700">Samtals</th>
           </tr></thead>
           <tbody id="stat-tbody"></tbody>
         </table>
@@ -294,6 +335,53 @@ const GUESSES = {
 "Formy":{"1":[1,1],"2":[0,1],"3":[1,2],"4":[0,0],"5":[0,1],"6":[2,0],"7":[0,3],"8":[0,1],"9":[6,0],"10":[2,1],"11":[1,2],"12":[2,0],"13":[5,0],"14":[2,1],"15":[0,2],"16":[1,1],"17":[3,1],"18":[0,2],"19":[4,1],"20":[2,0],"21":[3,0],"22":[1,1],"23":[2,0],"24":[0,3],"25":[1,1],"26":[2,0],"27":[1,1],"28":[1,2],"29":[1,1],"30":[1,2],"31":[4,0],"32":[2,2],"33":[2,1],"34":[2,1],"35":[1,0],"36":[0,3],"37":[3,0],"38":[3,0],"39":[4,0],"40":[0,2],"41":[2,1],"42":[4,0],"43":[2,1],"44":[0,1],"45":[4,0],"46":[2,1],"47":[0,3],"48":[2,0],"49":[2,0],"50":[1,1],"51":[0,3],"52":[2,0],"53":[1,1],"54":[1,1],"55":[0,2],"56":[1,3],"57":[2,1],"58":[0,2],"59":[2,1],"60":[1,1],"61":[1,3],"62":[1,0],"63":[0,2],"64":[1,2],"65":[2,1],"66":[0,3],"67":[0,4],"68":[2,1],"69":[1,2],"70":[0,0],"71":[0,2],"72":[0,5]},
 "Geimur":{"1":[2,0],"2":[1,2],"3":[1,1],"4":[2,1],"5":[0,3],"6":[5,1],"7":[2,2],"8":[1,2],"9":[6,0],"10":[2,2],"11":[1,3],"12":[2,1],"13":[5,0],"14":[3,1],"15":[1,2],"16":[2,1],"17":[3,1],"18":[2,3],"19":[4,0],"20":[1,0],"21":[1,0],"22":[2,2],"23":[2,1],"24":[0,3],"25":[3,1],"26":[2,1],"27":[2,2],"28":[2,2],"29":[1,0],"30":[2,1],"31":[3,0],"32":[0,2],"33":[1,2],"34":[4,2],"35":[3,0],"36":[1,1],"37":[4,1],"38":[2,0],"39":[3,0],"40":[2,1],"41":[2,1],"42":[5,2],"43":[3,2],"44":[1,2],"45":[2,1],"46":[2,1],"47":[1,3],"48":[2,1],"49":[2,0],"50":[0,1],"51":[1,3],"52":[2,0],"53":[2,1],"54":[0,2],"55":[1,2],"56":[2,3],"57":[2,1],"58":[1,3],"59":[1,1],"60":[2,0],"61":[1,2],"62":[2,0],"63":[0,3],"64":[1,3],"65":[3,0],"66":[0,2],"67":[1,3],"68":[1,1],"69":[2,1],"70":[1,2],"71":[2,2],"72":[1,2]}
 };
+
+// ── KNOCKOUT GUESSES ─────────────────────────────────────────────────────────
+// Format per player: { champion, runnerUp, third, topScorer, topScorerGoals }
+const KNOCKOUT_GUESSES = {
+  "Gunnar":  { champion:"Frakkland", runnerUp:"Brasilía",  third:"Argentína", topScorer:"Oyarzabal", topScorerGoals:6 },
+  "Sprölli": null,
+  "Illugi":  null,
+  "Svet":    null,
+  "Jóki":    null,
+  "Meddi":   null,
+  "Marri":   null,
+  "Fáni":    null,
+  "Hroar":   null,
+  "Formy":   null,
+  "Geimur":  null,
+};
+
+// Actual knockout results — fill in when known
+const KNOCKOUT_RESULTS = {
+  champion: null,      // e.g. "Frakkland"
+  runnerUp: null,      // e.g. "England"
+  third: null,         // e.g. "Argentína"
+  topScorer: null,     // e.g. "Messi"
+  topScorerGoals: null // e.g. 8
+};
+
+// Knockout scoring:
+// 20 stig — rétt heimsmeistari
+// 10 stig — rétt 2. sæti
+//  7 stig — rétt 3. sæti
+// 10 stig — réttur markakóngur
+//  5 stig — réttur markfjöldi markakóngs (aðeins ef leikmaður er líka réttur)
+function computeKnockoutScore(playerName){
+  const kg = KNOCKOUT_GUESSES[playerName];
+  const kr = KNOCKOUT_RESULTS;
+  if(!kg || !kr.champion) return { total:0, champion:0, runnerUp:0, third:0, topScorer:0, topScorerGoals:0 };
+  let champion=0, runnerUp=0, third=0, topScorer=0, topScorerGoals=0;
+  if(kr.champion && kg.champion === kr.champion) champion=20;
+  if(kr.runnerUp && kg.runnerUp === kr.runnerUp) runnerUp=10;
+  if(kr.third && kg.third === kr.third) third=7;
+  if(kr.topScorer && kg.topScorer === kr.topScorer){
+    topScorer=10;
+    if(kr.topScorerGoals && kg.topScorerGoals === kr.topScorerGoals) topScorerGoals=5;
+  }
+  return { total:champion+runnerUp+third+topScorer+topScorerGoals, champion, runnerUp, third, topScorer, topScorerGoals };
+}
+
 
 const MATCHES = [
   {id:1,g:"A",h:"Mexíkó",a:"Suður-Afríka",r:1,date:"11. júní"},{id:2,g:"A",h:"Suður-Kórea",a:"Tékkland",r:1,date:"11. júní"},
@@ -342,6 +430,8 @@ const API_KEY = '0bb6945d090b4e8d948443fe6b4255f9';
 const RESULT_OVERRIDES = {
   13: [0, 0],  // Spánn 0-0 Cape Verde
   37: [4, 0],  // Spánn 4-0 Saudi Arabia
+  39: [2, 2],  // Úrúgvæ 2-2 Cape Verde
+  63: [0, 0],  // Cape Verde 0-0 Saudi Arabia
 };
 const TEAM_MAP = {
   "Mexico":"Mexíkó","South Africa":"Suður-Afríka","Korea Republic":"Suður-Kórea","South Korea":"Suður-Kórea",
@@ -353,14 +443,36 @@ const TEAM_MAP = {
   "Germany":"Þýskaland","Curaçao":"Curaçao","Netherlands":"Holland","Japan":"Japan",
   "Ivory Coast":"Fílabeinsstr.","Côte d'Ivoire":"Fílabeinsstr.","Côte D'Ivoire":"Fílabeinsstr.",
   "Ecuador":"Ekvador","Sweden":"Svíþjóð","Tunisia":"Túnis",
-  "Spain":"Spánn","España":"Spánn","Cabo Verde":"Cape Verde","Cape Verde":"Cape Verde","Cabo Verde Islands":"Cape Verde",
+  "Spain":"Spánn","España":"Spánn","Cabo Verde":"Cape Verde","Cape Verde":"Cape Verde","Cabo Verde Islands":"Cape Verde","Cape Verde Islands":"Cape Verde","CV":"Cape Verde","Uruguay":"Úrúgvæ","Grænhöfðaeyjar":"Cape Verde",
   "Belgium":"Belgía","Egypt":"Egyptaland","Saudi Arabia":"Saudi Arabia","Uruguay":"Úrúgvæ",
   "Iran":"Íran","IR Iran":"Íran","New Zealand":"Nýja Sjáland",
   "France":"Frakkland","Senegal":"Senegal","Iraq":"Írak","Norway":"Noregur",
   "Argentina":"Argentína","Algeria":"Alsír","Austria":"Austuríki","Jordan":"Jórdan",
   "Portugal":"Portúgal","DR Congo":"Kongó DR","Congo DR":"Kongó DR",
   "England":"England","Croatia":"Króatía","Ghana":"Gana","Ghana (Republic)":"Gana","Panama":"Panama","Panamá":"Panama",
-  "Uzbekistan":"Úsbekistan","Colombia":"Kólumbía"
+  "Uzbekistan":"Úsbekistan","Colombia":"Kólumbía",
+  "Morocco":"Morokkó","Ivory Coast":"Fílabeinsstr.","Côte d'Ivoire":"Fílabeinsstr.",
+  "Cabo Verde":"Cape Verde","DR Congo":"Kongó DR","Congo DR":"Kongó DR",
+  "Bosnia and Herzegovina":"Bosníu-Herzeg.","Bosnia-Herzegovina":"Bosníu-Herzeg.",
+  "Bosnía-Herzeg.":"Bosníu-Herzeg.",
+  "Switzerland":"Sviss","Belgium":"Belgía","Netherlands":"Holland",
+  "Germany":"Þýskaland","France":"Frakkland","Spain":"Spánn",
+  "Brazil":"Brasilía","Argentina":"Argentína","Portugal":"Portúgal",
+  "Australia":"Ástralía","Mexico":"Mexíkó","Ecuador":"Ekvador",
+  "Algeria":"Alsír","Norway":"Noregur","Sweden":"Svíþjóð",
+  "Senegal":"Senegal","Ghana":"Gana","Paraguay":"Paragvæ",
+  "Croatia":"Króatía","Austria":"Austuríki","Egypt":"Egyptaland",
+  "Cape Verde Islands":"Cape Verde","Cabo Verde Islands":"Cape Verde","Cape Verde Islands":"Cape Verde","CV":"Cape Verde","Uruguay":"Úrúgvæ","Grænhöfðaeyjar":"Cape Verde",
+  "Côte D'Ivoire":"Fílabeinsstr.","Iran":"Íran","IR Iran":"Íran",
+  "New Zealand":"Nýja Sjáland","South Africa":"Suður-Afríka",
+  "Korea Republic":"Suður-Kórea","South Korea":"Suður-Kórea",
+  "United States":"Bandaríkin","USA":"Bandaríkin",
+  "Czechia":"Tékkland","Czech Republic":"Tékkland",
+  "Haiti":"Haítí","Scotland":"Skotland","Turkey":"Tyrkland","Türkiye":"Tyrkland",
+  "Japan":"Japan","Tunisia":"Túnis","Saudi Arabia":"Saudi Arabia",
+  "Uruguay":"Úrúgvæ","Iraq":"Írak","Jordan":"Jórdan",
+  "England":"England","Panama":"Panama","Qatar":"Katar",
+  "Canada":"Kanada","Kenya":"Kenía"
 };
 
 let results = {};
@@ -388,9 +500,48 @@ function computeStandings(res){
   GROUPS.forEach(g=>{sorted[g]=Object.entries(s[g]).sort((a,b)=>b[1].pts-a[1].pts||b[1].gd-a[1].gd||b[1].gf-a[1].gf).map(([t])=>t);});
   return sorted;
 }
+// Compute best 8 third-place teams with tie detection
+function getBest8Thirds(standings, allGroupsDone, resMap){
+  const thirds = [];
+  GROUPS.forEach(grp => {
+    if(!allGroupsDone[grp]) return;
+    const grpTeams = standings[grp] || [];
+    if(grpTeams.length < 3) return;
+    const t = grpTeams[2];
+    const grpMatches = MATCHES.filter(m => m.g === grp);
+    let pts=0, gd=0, gf=0;
+    grpMatches.forEach(m => {
+      const r = resMap[m.id];
+      if(!r) return;
+      const isHome = m.h === t;
+      const isAway = m.a === t;
+      if(!isHome && !isAway) return;
+      const th = isHome ? r.h : r.a;
+      const ta = isHome ? r.a : r.h;
+      gf += th;
+      gd += th - ta;
+      if(th > ta) pts += 3;
+      else if(th === ta) pts += 1;
+    });
+    thirds.push({team: t, grp, pts, gd, gf});
+  });
+
+  // Sort by pts, gd, gf
+  thirds.sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);
+
+  // Check for tie at position 8/9
+  let hasTie = false;
+  if(thirds.length >= 9) {
+    const t8 = thirds[7], t9 = thirds[8];
+    if(t8.pts===t9.pts && t8.gd===t9.gd && t8.gf===t9.gf) hasTie = true;
+  }
+
+  return { best8: thirds.slice(0,8).map(x=>x.team), hasTie, thirds };
+}
+
 function computeScore(playerName){
   const g=GUESSES[playerName];
-  let exact=0,outcome=0,adv=0;
+  let exact=0,outcome=0,adv=0,advUncertain=false;
 
   // Match points
   MATCHES.forEach(m=>{
@@ -401,23 +552,60 @@ function computeScore(playerName){
     else if(pts===1) outcome++;
   });
 
-  // Advancement points — only when ALL 6 matches in a group are done
+  // Check which groups are fully done
+  const allGroupsDone={};
+  GROUPS.forEach(grp=>{
+    allGroupsDone[grp]=MATCHES.filter(m=>m.g===grp).every(m=>results[m.id]!=null);
+  });
+  const allDone = GROUPS.every(g=>allGroupsDone[g]);
+
+  // Real standings
   const realS=computeStandings(results);
-  // Build player guess results in {id: {h,a}} format for computeStandings
+  // Use completed groups for thirds — only when ALL 12 groups are done
+  const {best8: real8thirds, hasTie: realTie} = allDone
+    ? getBest8Thirds(realS, allGroupsDone, results)
+    : {best8:[], hasTie:false};
+
+  const realAdvancers = new Set();
+  GROUPS.forEach(grp=>{
+    if(!allGroupsDone[grp]) return;
+    (realS[grp]||[]).slice(0,2).forEach(t=>realAdvancers.add(t));
+  });
+  real8thirds.forEach(t=>realAdvancers.add(t));
+
+  // Player predicted standings
   const playerRes={};
   Object.entries(g).forEach(([k,v])=>{ playerRes[parseInt(k)]={h:v[0],a:v[1]}; });
   const predS=computeStandings(playerRes);
+  // For predicted thirds, always use all groups (player has guesses for all 72)
+  const {best8: pred8thirds, hasTie: predTie} = allDone
+    ? getBest8Thirds(predS, Object.fromEntries(GROUPS.map(g=>[g,true])), playerRes)
+    : {best8:[], hasTie:false};
 
+  const predAdvancers = new Set();
   GROUPS.forEach(grp=>{
-    const grpMatches=MATCHES.filter(m=>m.g===grp);
-    const allDone=grpMatches.every(m=>results[m.id]!=null);
-    if(!allDone) return;
-    const realTop=(realS[grp]||[]).slice(0,2);
-    const predTop=new Set((predS[grp]||[]).slice(0,2));
-    realTop.forEach(t=>{ if(predTop.has(t)) adv++; });
+    (predS[grp]||[]).slice(0,2).forEach(t=>predAdvancers.add(t));
   });
+  pred8thirds.forEach(t=>predAdvancers.add(t));
 
-  return{total:exact*3+outcome+adv*2,exact,outcome,adv};
+  // Count advancement points — only for groups where real results are known
+  realAdvancers.forEach(t=>{ if(predAdvancers.has(t)) adv++; });
+
+  // Flag uncertain only if there's a tie AND it affects the score
+  if(realTie || predTie) advUncertain = true;
+
+  const ks = computeKnockoutScore(playerName);
+  const koMatchPts = computeKnockoutMatchScore(playerName);
+  const groupTotal = exact*3+outcome+adv*2;
+  const knockoutTotal = koMatchPts + ks.total;
+  return{
+    total: groupTotal + knockoutTotal,
+    groupTotal,
+    knockoutTotal,
+    exact, outcome, adv, advUncertain,
+    koMatchPts,
+    knockout: ks
+  };
 }
 function getAllScores(){
   return PLAYERS.map(p=>({...p,score:computeScore(p.name)})).sort((a,b)=>b.score.total-a.score.total);
@@ -433,7 +621,7 @@ async function fetchAndUpdate(){
   if(status) status.textContent='Tengist football-data.org...';
   if(errBar) errBar.style.display='none';
 
-  const TARGET='https://api.football-data.org/v4/competitions/WC/matches?stage=GROUP_STAGE&season=2026';
+  const TARGET='https://api.football-data.org/v4/competitions/WC/matches?season=2026';
   const PROXY='https://corsproxy.io/?url='+encodeURIComponent(TARGET);
 
   try{
@@ -445,12 +633,33 @@ async function fetchAndUpdate(){
       if(m.status!=='FINISHED') return;
       const hName=TEAM_MAP[m.homeTeam.name]||m.homeTeam.name;
       const aName=TEAM_MAP[m.awayTeam.name]||m.awayTeam.name;
-      const match=MATCHES.find(x=>x.h===hName&&x.a===aName);
-      if(match&&m.score?.fullTime?.home!=null){
-        // Don't overwrite manually entered results
-        if(!results[match.id]||results[match.id].auto!==false){
-          results[match.id]={h:m.score.fullTime.home,a:m.score.fullTime.away,auto:true};
+
+      // Group stage match
+      const grpMatch=MATCHES.find(x=>x.h===hName&&x.a===aName);
+      if(grpMatch&&m.score?.fullTime?.home!=null){
+        if(!results[grpMatch.id]||results[grpMatch.id].auto!==false){
+          results[grpMatch.id]={h:m.score.fullTime.home,a:m.score.fullTime.away,auto:true};
           count++;
+        }
+      }
+
+      // Knockout match — use extraTime score if available, else fullTime
+      const koMatch=KO_MATCHES.find(x=>x.home===hName&&x.away===aName);
+      if(koMatch&&m.score?.fullTime?.home!=null){
+        if(!koMatch.result||koMatch.result.auto!==false){
+          // Use extraTime if available (120min), else fullTime (90min)
+          const et=m.score.extraTime;
+          const ft=m.score.fullTime;
+          const finalH = (et&&et.home!=null) ? et.home : ft.home;
+          const finalA = (et&&et.away!=null) ? et.away : ft.away;
+          // Penalty winner
+          const pen=m.score.penalties;
+          let advancer=null;
+          if(pen&&pen.home!=null){
+            advancer = pen.home>pen.away ? hName : aName;
+          }
+          koMatch.result={h:finalH,a:finalA,advancer,auto:true};
+          koMatch.advancer=advancer;
         }
       }
     });
@@ -516,37 +725,78 @@ function tryAdminLogin(){
 
 function renderAdminMatches(){
   const rndNames={1:'Umferð 1  ·  11.–17. júní',2:'Umferð 2  ·  18.–23. júní',3:'Lokaumferð  ·  24.–27. júní'};
+  const koRndNames={r32:'32 liða úrslit',r16:'16 liða úrslit',qf:'Leikir um 8',sf:'Undanúrslit',tp:'Leikur um 3. sæti',f:'Úrslitaleikur'};
   let html='';
+
+  // Group stage
+  html+='<div class="admin-round-title" style="font-size:13px;font-weight:700;color:#1877f2;margin:0 0 12px">Riðlakeppni</div>';
   [1,2,3].forEach(rnd=>{
     html+=`<div class="admin-round"><div class="admin-round-title">${rndNames[rnd]}</div>`;
     MATCHES.filter(m=>m.r===rnd).forEach(m=>{
       const r=results[m.id];
-      const hv=r!=null?r.h:'';
-      const av=r!=null?r.a:'';
+      const hv=r!=null?r.h:''; const av=r!=null?r.a:'';
       const set=r!=null?' set':'';
       html+=`<div class="admin-match">
-        <span class="num">${m.id}</span>
-        <span class="grp">${m.g}</span>
+        <span class="num">${m.id}</span><span class="grp">${m.g}</span>
         <span class="home">${m.h}</span>
-        <input type="number" min="0" max="20" id="ah-${m.id}" value="${hv}" placeholder="–" class="${set}" oninput="markDirty(${m.id})">
+        <input type="number" min="0" max="30" id="ah-${m.id}" value="${hv}" placeholder="–" class="${set}" oninput="markDirty('${m.id}','grp')">
         <span class="sep">–</span>
-        <input type="number" min="0" max="20" id="aa-${m.id}" value="${av}" placeholder="–" class="${set}" oninput="markDirty(${m.id})">
+        <input type="number" min="0" max="30" id="aa-${m.id}" value="${av}" placeholder="–" class="${set}" oninput="markDirty('${m.id}','grp')">
         <span class="away">${m.a}</span>
       </div>`;
     });
     html+='</div>';
   });
+
+  // Knockout stage — only show matches where teams are known
+  const knownKoMatches = KO_MATCHES.filter(m => m.home && m.away);
+  if(knownKoMatches.length > 0){
+    html+='<div class="admin-round-title" style="font-size:13px;font-weight:700;color:#1877f2;margin:20px 0 12px">Útsláttarkeppni</div>';
+    KO_ROUNDS.forEach(round=>{
+      const rMatches = knownKoMatches.filter(m=>m.round===round.id);
+      if(!rMatches.length) return;
+      html+=`<div class="admin-round"><div class="admin-round-title">${koRndNames[round.id]}</div>`;
+      rMatches.forEach(m=>{
+        const r=m.result;
+        const hv=r!=null?r.h:''; const av=r!=null?r.a:'';
+        const set=r!=null?' set':'';
+        // Advancer input for draws
+        const advVal=r&&r.advancer?r.advancer:'';
+        html+=`<div class="admin-match">
+          <span class="num" style="font-size:9px;width:24px">${m.id}</span>
+          <span class="home">${m.home}</span>
+          <input type="number" min="0" max="30" id="kah-${m.id}" value="${hv}" placeholder="–" class="${set}" oninput="markKoDirty('${m.id}')">
+          <span class="sep">–</span>
+          <input type="number" min="0" max="30" id="kaa-${m.id}" value="${av}" placeholder="–" class="${set}" oninput="markKoDirty('${m.id}')">
+          <span class="away">${m.away}</span>
+          <input type="text" id="kaadv-${m.id}" value="${advVal}" placeholder="pen. sigurlið" style="font-size:11px;width:100px;border:1px solid #dee2e6;border-radius:4px;padding:3px 6px;margin-left:4px" oninput="markKoDirty('${m.id}')">
+        </div>`;
+      });
+      html+='</div>';
+    });
+  }
+
   document.getElementById('admin-matches').innerHTML=html;
 }
 
-function markDirty(id){
+function markDirty(id, type){
   const hi=document.getElementById('ah-'+id);
   const ai=document.getElementById('aa-'+id);
+  if(!hi||!ai) return;
+  if(hi.value!==''&&ai.value!==''){hi.classList.add('set');ai.classList.add('set');}
+  else{hi.classList.remove('set');ai.classList.remove('set');}
+}
+
+function markKoDirty(id){
+  const hi=document.getElementById('kah-'+id);
+  const ai=document.getElementById('kaa-'+id);
+  if(!hi||!ai) return;
   if(hi.value!==''&&ai.value!==''){hi.classList.add('set');ai.classList.add('set');}
   else{hi.classList.remove('set');ai.classList.remove('set');}
 }
 
 function saveAllResults(){
+  // Save group stage
   MATCHES.forEach(m=>{
     const hi=document.getElementById('ah-'+m.id);
     const ai=document.getElementById('aa-'+m.id);
@@ -555,14 +805,32 @@ function saveAllResults(){
     if(!isNaN(h)&&!isNaN(a)&&h>=0&&a>=0) results[m.id]={h,a,auto:false};
     else if(hi.value===''&&ai.value==='') delete results[m.id];
   });
+
+  // Save knockout
+  KO_MATCHES.forEach(m=>{
+    const hi=document.getElementById('kah-'+m.id);
+    const ai=document.getElementById('kaa-'+m.id);
+    const advi=document.getElementById('kaadv-'+m.id);
+    if(!hi||!ai) return;
+    const h=parseInt(hi.value),a=parseInt(ai.value);
+    const advancer=advi&&advi.value.trim()?advi.value.trim():null;
+    if(!isNaN(h)&&!isNaN(a)&&h>=0&&a>=0){
+      m.result={h,a,advancer,auto:false};
+      m.advancer=advancer;
+    } else if(hi.value===''&&ai.value===''){
+      m.result=null; m.advancer=null;
+    }
+  });
   saveResults();
+  // Also save KO results to localStorage
+  try{localStorage.setItem('wc26_ko_results', JSON.stringify(KO_MATCHES.map(m=>({id:m.id,result:m.result,advancer:m.advancer}))));}catch(e){}
   const msg=document.getElementById('saved-msg');
   msg.style.display='block';
   setTimeout(()=>msg.style.display='none',2500);
 }
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
-function renderAll(){renderLeaderboard();renderStats();renderMatches();if(document.getElementById("section-development").classList.contains("active")) renderDevelopment();if(document.getElementById("section-breakdown").classList.contains("active")) renderBreakdown();}
+function renderAll(){renderLeaderboard();renderStats();renderMatches();if(document.getElementById("section-development").classList.contains("active")) renderDevelopment();if(document.getElementById("section-breakdown").classList.contains("active")) renderBreakdown();if(document.getElementById("section-knockout").classList.contains("active")) renderKnockout();}
 
 function renderLeaderboard(){
   const scored=getAllScores();
@@ -579,9 +847,13 @@ function renderLeaderboard(){
       <div class="lb-info">
         <div class="lb-name">${p.display}</div>
         <div class="lb-bar-wrap"><div class="lb-bar" style="width:${barPct}%"></div></div>
-        <div class="lb-detail"><span class="ex">${p.score.exact} nákvæm</span> · ${p.score.outcome} úrslit${p.score.adv>0?' · <span class="adv">'+p.score.adv+' framg.</span>':''}</div>
+        <div class="lb-detail">
+          <span style="color:var(--text2)">Riðill: <strong>${p.score.groupTotal}</strong></span>
+          ${p.score.knockoutTotal>0?'<span style="margin-left:8px;color:#f59e0b">Útslátt: <strong>'+p.score.knockoutTotal+'</strong></span>':''}
+          <span style="margin-left:8px;color:var(--text3);font-size:10px">${p.score.exact} nákvæm · ${p.score.outcome} úrslit${p.score.adv>0?' · '+p.score.adv+' framg.'+(p.score.advUncertain?' ⚠️':''):''}</span>
+        </div>
       </div>
-      <div class="lb-pts-wrap"><div class="lb-pts">${p.score.total}</div><div class="lb-pts-lbl">stig</div></div>
+      <div class="lb-pts-wrap"><div class="lb-pts" style="${p.score.knockoutTotal>0?'color:#2d9e44':''}">${p.score.total}</div><div class="lb-pts-lbl">stig</div></div>
     </div>`;
   }).join('');
 }
@@ -609,7 +881,7 @@ function renderStats(){
       <td><strong>${p.display}</strong></td>
       <td class="${p.score.exact===Math.max(...scored.map(x=>x.score.exact))?'hi':''}">${p.score.exact} (${p.score.exact*3})</td>
       <td>${p.score.outcome}</td>
-      <td style="color:var(--green)">${p.score.adv} (${p.score.adv*2})</td>
+      <td style="color:var(--green)">${p.score.adv} (${p.score.adv*2})${p.score.advUncertain?' ⚠️':''}</td>
       <td class="hi">${p.score.total}</td>
     </tr>`).join('');
 
@@ -676,6 +948,7 @@ function renderMatches(){
 function showSection(id){
   if(id==='development') renderDevelopment();
   if(id==='breakdown') renderBreakdown();
+  if(id==='knockout') renderKnockout();
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('section-'+id).classList.add('active');
@@ -835,13 +1108,211 @@ function renderBreakdown(){
       }
       tbody += `<td><span class="bd-cell ${cls}">${sym}</span></td>`;
     });
-    tbody += `<td class="total-col">${p.score.total}</td></tr>`;
+    tbody += `
+      <td style="color:var(--blue);font-weight:600;text-align:right;padding:7px 10px">${p.score.groupTotal}</td>
+      <td style="color:#f59e0b;text-align:right;padding:7px 10px">${p.score.koMatchPts||0}</td>
+      <td style="color:#f59e0b;text-align:right;padding:7px 10px">${p.score.knockout?p.score.knockout.total:0}</td>
+      <td style="color:#f59e0b;font-weight:600;text-align:right;padding:7px 10px">${p.score.knockoutTotal||0}</td>
+      <td class="total-col" style="color:#2d9e44;font-weight:800">${p.score.total}</td></tr>`;
   });
   document.getElementById('bd-tbody').innerHTML = tbody;
 }
 
+
+// ── KNOCKOUT MATCHES ──────────────────────────────────────────────────────────
+const KO_ROUNDS = [
+  { id:'r32', label:'32 liða úrslit  ·  28. jún – 4. júl' },
+  { id:'r16', label:'16 liða úrslit  ·  6.–9. júl' },
+  { id:'qf',  label:'Leikir um 8  ·  11.–12. júl' },
+  { id:'sf',  label:'Undanúrslit  ·  15. júl' },
+  { id:'tp',  label:'Leikur um 3. sæti  ·  18. júl' },
+  { id:'f',   label:'Úrslitaleikur  ·  19. júl' },
+];
+
+// Each match: { id, round, home, away, result: {h,a} or null, advancer: team or null }
+// result = score after 90/120 min. advancer = who went through (for penalty cases)
+const KO_MATCHES = [
+  // Round of 32
+  {id:'r32_1',round:'r32',home:'Suður-Afríka',away:'Kanada',result:null,advancer:null},
+  {id:'r32_2',round:'r32',home:'Þýskaland',away:'Paragvæ',result:null,advancer:null},
+  {id:'r32_3',round:'r32',home:'Holland',away:'Marokkó',result:null,advancer:null},
+  {id:'r32_4',round:'r32',home:'Brasilía',away:'Japan',result:null,advancer:null},
+  {id:'r32_5',round:'r32',home:'Frakkland',away:'Svíþjóð',result:null,advancer:null},
+  {id:'r32_6',round:'r32',home:'Fílabeinsstr.',away:'Noregur',result:null,advancer:null},
+  {id:'r32_7',round:'r32',home:'Mexíkó',away:'Ekvador',result:null,advancer:null},
+  {id:'r32_8',round:'r32',home:'England',away:'Kongó DR',result:null,advancer:null},
+  {id:'r32_9',round:'r32',home:'Bandaríkin',away:'Bosníu-Herzeg.',result:null,advancer:null},
+  {id:'r32_10',round:'r32',home:'Belgía',away:'Senegal',result:null,advancer:null},
+  {id:'r32_11',round:'r32',home:'Kólumbía',away:'Gana',result:null,advancer:null},
+  {id:'r32_12',round:'r32',home:'Spánn',away:'Austuríki',result:null,advancer:null},
+  {id:'r32_13',round:'r32',home:'Argentína',away:'Grænhöfðaeyjar',result:null,advancer:null},
+  {id:'r32_14',round:'r32',home:'Portúgal',away:'Króatía',result:null,advancer:null},
+  {id:'r32_15',round:'r32',home:'Sviss',away:'Alsír',result:null,advancer:null},
+  {id:'r32_16',round:'r32',home:'Ástralía',away:'Egyptaland',result:null,advancer:null},
+  // Round of 16
+  {id:'r16_1',round:'r16',home:'Þýskaland',away:'Frakkland',result:null,advancer:null},
+  {id:'r16_2',round:'r16',home:'Kanada',away:'Holland',result:null,advancer:null},
+  {id:'r16_3',round:'r16',home:'Brasilía',away:'Noregur',result:null,advancer:null},
+  {id:'r16_4',round:'r16',home:'Mexíkó',away:'England',result:null,advancer:null},
+  {id:'r16_5',round:'r16',home:'Portúgal',away:'Spánn',result:null,advancer:null},
+  {id:'r16_6',round:'r16',home:'Bandaríkin',away:'Belgía',result:null,advancer:null},
+  {id:'r16_7',round:'r16',home:'Argentína',away:'Egyptaland',result:null,advancer:null},
+  {id:'r16_8',round:'r16',home:'Alsír',away:'Kólumbía',result:null,advancer:null},
+  // Quarter finals
+  {id:'qf_1',round:'qf',home:'Frakkland',away:'Holland',result:null,advancer:null},
+  {id:'qf_2',round:'qf',home:'Brasilía',away:'England',result:null,advancer:null},
+  {id:'qf_3',round:'qf',home:'Spánn',away:'Belgía',result:null,advancer:null},
+  {id:'qf_4',round:'qf',home:'Argentína',away:'Kólumbía',result:null,advancer:null},
+  // Semi finals
+  {id:'sf_1',round:'sf',home:'Frakkland',away:'Spánn',result:null,advancer:null},
+  {id:'sf_2',round:'sf',home:'England',away:'Argentína',result:null,advancer:null},
+  // 3rd place
+  {id:'tp_1',round:'tp',home:'Spánn',away:'Argentína',result:null,advancer:null},
+  // Final
+  {id:'f_1',round:'f',home:'Frakkland',away:'England',result:null,advancer:null},
+];
+
+// Gunnar's knockout guesses per match
+// Format: { matchId: { h, a, advancer } }
+// advancer only needed if guessing draw after 120min
+const KO_MATCH_GUESSES = {
+  "Gunnar": {
+    "r32_1":{h:1,a:2},"r32_2":{h:2,a:0},"r32_3":{h:2,a:1},"r32_4":{h:2,a:0},
+    "r32_5":{h:3,a:1},"r32_6":{h:1,a:2},"r32_7":{h:1,a:0},"r32_8":{h:3,a:0},
+    "r32_9":{h:2,a:0},"r32_10":{h:1,a:1,advancer:"Belgía"},"r32_11":{h:2,a:2,advancer:"Kólumbía"},
+    "r32_12":{h:2,a:0},"r32_13":{h:3,a:0},"r32_14":{h:2,a:1},"r32_15":{h:1,a:2},"r32_16":{h:0,a:1},
+    "r16_1":{h:1,a:2},"r16_2":{h:1,a:2},"r16_3":{h:3,a:2},"r16_4":{h:0,a:1},
+    "r16_5":{h:1,a:3},"r16_6":{h:0,a:1},"r16_7":{h:3,a:0},"r16_8":{h:0,a:1},
+    "qf_1":{h:2,a:0},"qf_2":{h:2,a:1},"qf_3":{h:1,a:0},"qf_4":{h:2,a:0},
+    "sf_1":{h:3,a:2},"sf_2":{h:2,a:2,advancer:"Brasilía"},
+    "tp_1":{h:1,a:2},
+    "f_1":{h:2,a:0},
+  },
+  "Sprölli":null,"Illugi":null,"Svet":null,"Jóki":null,"Meddi":null,
+  "Marri":null,"Fáni":null,"Hroar":null,"Formy":null,"Geimur":null,
+};
+
+function getKoOutcome(h, a, advancer){
+  if(h > a) return {winner: 'home'};
+  if(a > h) return {winner: 'away'};
+  return {winner: advancer ? 'adv' : 'draw', advancer};
+}
+
+function scoreKoMatch(guess, real){
+  if(!guess || !real || real.h==null) return 0;
+  const realAdv = real.advancer || (real.h > real.a ? 'home' : real.a > real.h ? 'away' : null);
+  const guessAdv = guess.advancer || (guess.h > guess.a ? 'home' : guess.a > guess.h ? 'away' : null);
+  // Exact score
+  if(guess.h === real.h && guess.a === real.a) return 3;
+  // Correct advancer
+  if(realAdv && guessAdv && realAdv === guessAdv) return 2;
+  // Draw + correct penalty winner
+  if(real.h === real.a && guess.h === guess.a && real.advancer && guess.advancer === real.advancer) return 2;
+  return 0;
+}
+
+function computeKnockoutMatchScore(playerName){
+  const guesses = KO_MATCH_GUESSES[playerName];
+  if(!guesses) return 0;
+  let total = 0;
+  KO_MATCHES.forEach(m => {
+    if(!m.result) return;
+    const g = guesses[m.id];
+    total += scoreKoMatch(g, m.result);
+  });
+  return total;
+}
+
+function renderKnockout(){
+  const players = PLAYERS.map(p => p.name);
+
+  // Bonus grid
+  const kr = KNOCKOUT_RESULTS;
+  const bonusItems = [
+    { label:'🏆 Heimsmeistari', result: kr.champion, pts: 20,
+      guesses: players.map(p => ({ name: p, val: KNOCKOUT_GUESSES[p]?.champion })) },
+    { label:'🥈 2. sæti', result: kr.runnerUp, pts: 10,
+      guesses: players.map(p => ({ name: p, val: KNOCKOUT_GUESSES[p]?.runnerUp })) },
+    { label:'🥉 3. sæti', result: kr.third, pts: 7,
+      guesses: players.map(p => ({ name: p, val: KNOCKOUT_GUESSES[p]?.third })) },
+    { label:'⚽ Markakóngur', result: kr.topScorer, pts: 10,
+      guesses: players.map(p => ({ name: p, val: KNOCKOUT_GUESSES[p]?.topScorer })) },
+  ];
+
+  document.getElementById('ko-bonus-grid').innerHTML = bonusItems.map(b => `
+    <div class="ko-bonus-card">
+      <div class="ko-bonus-label">${b.label} (${b.pts}p)</div>
+      <div class="ko-bonus-result">${b.result || '—'}</div>
+      <div class="ko-bonus-guesses">
+        ${b.guesses.filter(g=>g.val).map(g => `
+          <div class="ko-bonus-guess${b.result && g.val===b.result?' hit':''}">
+            <span>${g.name}</span><span>${g.val}</span>
+          </div>`).join('')}
+        ${b.guesses.every(g=>!g.val)?'<span style="color:var(--text3);font-size:11px">Engar giskur enn</span>':''}
+      </div>
+    </div>`).join('');
+
+  // Matches by round
+  let html = '';
+  KO_ROUNDS.forEach(round => {
+    const matches = KO_MATCHES.filter(m => m.round === round.id);
+    html += `<div class="ko-section"><div class="ko-section-title">${round.label}</div>`;
+    matches.forEach(m => {
+      const hasResult = m.result && m.result.h != null;
+      const scoreStr = hasResult ? `${m.result.h}–${m.result.a}` : '·–·';
+      const advStr = hasResult && m.advancer ? ` (${m.advancer} á pen.)` : '';
+
+      html += `<div class="ko-match">
+        <div class="ko-match-header">
+          <span class="ko-match-teams">${m.home} vs ${m.away}</span>
+          <span class="ko-match-score${hasResult?'':' pending'}">${scoreStr}${advStr}</span>
+        </div>
+        <div class="ko-guesses">`;
+
+      const scorers=[], nonscorers=[];
+      players.forEach(pname => {
+        const g = KO_MATCH_GUESSES[pname]?.[m.id];
+        if(!g) return;
+        const pts = hasResult ? scoreKoMatch(g, m.result) : null;
+        if(hasResult && pts===0){ nonscorers.push(pname); return; }
+        const gStr = g.h + '–' + g.a + (g.advancer ? ` (${g.advancer})` : '');
+        const cls = pts === 3 ? 'exact' : pts === 2 ? 'correct' : '';
+        const ptsStr = pts != null ? ` · ${pts}p` : '';
+        scorers.push(`<span class="ko-guess ${cls}"><span class="name">${pname}</span><span class="score">${gStr}${ptsStr}</span></span>`);
+      });
+      if(scorers.length) html += scorers.join('');
+      if(hasResult && nonscorers.length) html += `<span class="ko-guess wrong" style="font-size:10px">0p: ${nonscorers.join(', ')}</span>`;
+      if(!hasResult){
+        // Show all guesses when no result yet
+        players.forEach(pname => {
+          const g = KO_MATCH_GUESSES[pname]?.[m.id];
+          if(!g) return;
+          const gStr = g.h + '–' + g.a + (g.advancer ? ` (${g.advancer})` : '');
+          html += `<span class="ko-guess"><span class="name">${pname}</span><span class="score">${gStr}</span></span>`;
+        });
+      }
+
+      html += `</div></div>`;
+    });
+    html += '</div>';
+  });
+
+  document.getElementById('ko-matches').innerHTML = html;
+}
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
 loadResults();
+// Load KO match results from localStorage
+try{
+  const koSaved=localStorage.getItem('wc26_ko_results');
+  if(koSaved){
+    const saved=JSON.parse(koSaved);
+    saved.forEach(s=>{
+      const m=KO_MATCHES.find(x=>x.id===s.id);
+      if(m&&s.result){m.result=s.result;m.advancer=s.advancer;}
+    });
+  }
+}catch(e){}
 // Apply known correct overrides, always
 Object.entries(RESULT_OVERRIDES).forEach(([id,r])=>{
   results[parseInt(id)]={h:r[0],a:r[1],auto:true};
