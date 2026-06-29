@@ -644,8 +644,23 @@ async function fetchAndUpdate(){
         }
       }
 
-      // Knockout match — use extraTime score if available, else fullTime
-      const koMatch=KO_MATCHES.find(x=>x.home===hName&&x.away===aName);
+      // Knockout match — match by name or assign to next empty slot in round
+      let koMatch=KO_MATCHES.find(x=>x.home===hName&&x.away===aName);
+      if(!koMatch){
+        // Try to find the right round from API stage
+        const stage = m.stage||'';
+        let roundId = null;
+        if(stage.includes('ROUND_OF_16')) roundId='r16';
+        else if(stage.includes('QUARTER')) roundId='qf';
+        else if(stage.includes('SEMI')) roundId='sf';
+        else if(stage.includes('THIRD')) roundId='tp';
+        else if(stage.includes('FINAL')&&!stage.includes('SEMI')&&!stage.includes('THIRD')) roundId='f';
+        else if(stage.includes('ROUND_OF_32')) roundId='r32';
+        if(roundId){
+          koMatch = KO_MATCHES.find(x=>x.round===roundId&&x.home===null);
+          if(koMatch){ koMatch.home=hName; koMatch.away=aName; }
+        }
+      }
       if(koMatch&&m.score?.fullTime?.home!=null){
         if(!koMatch.result||koMatch.result.auto!==false){
           // Use extraTime if available (120min), else fullTime (90min)
@@ -1133,44 +1148,44 @@ const KO_ROUNDS = [
 // Each match: { id, round, home, away, result: {h,a} or null, advancer: team or null }
 // result = score after 90/120 min. advancer = who went through (for penalty cases)
 const KO_MATCHES = [
-  // Round of 32
-  {id:'r32_1',round:'r32',home:'Suður-Afríka',away:'Kanada',result:null,advancer:null},
-  {id:'r32_2',round:'r32',home:'Þýskaland',away:'Paragvæ',result:null,advancer:null},
-  {id:'r32_3',round:'r32',home:'Holland',away:'Marokkó',result:null,advancer:null},
-  {id:'r32_4',round:'r32',home:'Brasilía',away:'Japan',result:null,advancer:null},
-  {id:'r32_5',round:'r32',home:'Frakkland',away:'Svíþjóð',result:null,advancer:null},
-  {id:'r32_6',round:'r32',home:'Fílabeinsstr.',away:'Noregur',result:null,advancer:null},
-  {id:'r32_7',round:'r32',home:'Mexíkó',away:'Ekvador',result:null,advancer:null},
-  {id:'r32_8',round:'r32',home:'England',away:'Kongó DR',result:null,advancer:null},
-  {id:'r32_9',round:'r32',home:'Bandaríkin',away:'Bosníu-Herzeg.',result:null,advancer:null},
-  {id:'r32_10',round:'r32',home:'Belgía',away:'Senegal',result:null,advancer:null},
-  {id:'r32_11',round:'r32',home:'Kólumbía',away:'Gana',result:null,advancer:null},
-  {id:'r32_12',round:'r32',home:'Spánn',away:'Austuríki',result:null,advancer:null},
-  {id:'r32_13',round:'r32',home:'Argentína',away:'Grænhöfðaeyjar',result:null,advancer:null},
-  {id:'r32_14',round:'r32',home:'Portúgal',away:'Króatía',result:null,advancer:null},
-  {id:'r32_15',round:'r32',home:'Sviss',away:'Alsír',result:null,advancer:null},
-  {id:'r32_16',round:'r32',home:'Ástralía',away:'Egyptaland',result:null,advancer:null},
-  // Round of 16
-  {id:'r16_1',round:'r16',home:'Þýskaland',away:'Frakkland',result:null,advancer:null},
-  {id:'r16_2',round:'r16',home:'Kanada',away:'Holland',result:null,advancer:null},
-  {id:'r16_3',round:'r16',home:'Brasilía',away:'Noregur',result:null,advancer:null},
-  {id:'r16_4',round:'r16',home:'Mexíkó',away:'England',result:null,advancer:null},
-  {id:'r16_5',round:'r16',home:'Portúgal',away:'Spánn',result:null,advancer:null},
-  {id:'r16_6',round:'r16',home:'Bandaríkin',away:'Belgía',result:null,advancer:null},
-  {id:'r16_7',round:'r16',home:'Argentína',away:'Egyptaland',result:null,advancer:null},
-  {id:'r16_8',round:'r16',home:'Alsír',away:'Kólumbía',result:null,advancer:null},
+  // Round of 32 — teams are known, ordered to match player guesses
+  {id:'r32_1',round:'r32',home:'Brasilía',away:'Japan',result:null,advancer:null},
+  {id:'r32_2',round:'r32',home:'Frakkland',away:'Svíþjóð',result:null,advancer:null},
+  {id:'r32_3',round:'r32',home:'Fílabeinsstr.',away:'Noregur',result:null,advancer:null},
+  {id:'r32_4',round:'r32',home:'Suður-Afríka',away:'Kanada',result:null,advancer:null},
+  {id:'r32_5',round:'r32',home:'Mexíkó',away:'Ekvador',result:null,advancer:null},
+  {id:'r32_6',round:'r32',home:'England',away:'Kongó DR',result:null,advancer:null},
+  {id:'r32_7',round:'r32',home:'Bandaríkin',away:'Bosníu-Herzeg.',result:null,advancer:null},
+  {id:'r32_8',round:'r32',home:'Belgía',away:'Senegal',result:null,advancer:null},
+  {id:'r32_9',round:'r32',home:'Kólumbía',away:'Gana',result:null,advancer:null},
+  {id:'r32_10',round:'r32',home:'Spánn',away:'Austuríki',result:null,advancer:null},
+  {id:'r32_11',round:'r32',home:'Argentína',away:'Grænhöfðaeyjar',result:null,advancer:null},
+  {id:'r32_12',round:'r32',home:'Portúgal',away:'Króatía',result:null,advancer:null},
+  {id:'r32_13',round:'r32',home:'Sviss',away:'Alsír',result:null,advancer:null},
+  {id:'r32_14',round:'r32',home:'Ástralía',away:'Egyptaland',result:null,advancer:null},
+  {id:'r32_15',round:'r32',home:'Þýskaland',away:'Paragvæ',result:null,advancer:null},
+  {id:'r32_16',round:'r32',home:'Holland',away:'Marokkó',result:null,advancer:null},
+  // Round of 16 — teams filled in by API when known
+  {id:'r16_1',round:'r16',home:null,away:null,result:null,advancer:null},
+  {id:'r16_2',round:'r16',home:null,away:null,result:null,advancer:null},
+  {id:'r16_3',round:'r16',home:null,away:null,result:null,advancer:null},
+  {id:'r16_4',round:'r16',home:null,away:null,result:null,advancer:null},
+  {id:'r16_5',round:'r16',home:null,away:null,result:null,advancer:null},
+  {id:'r16_6',round:'r16',home:null,away:null,result:null,advancer:null},
+  {id:'r16_7',round:'r16',home:null,away:null,result:null,advancer:null},
+  {id:'r16_8',round:'r16',home:null,away:null,result:null,advancer:null},
   // Quarter finals
-  {id:'qf_1',round:'qf',home:'Frakkland',away:'Holland',result:null,advancer:null},
-  {id:'qf_2',round:'qf',home:'Brasilía',away:'England',result:null,advancer:null},
-  {id:'qf_3',round:'qf',home:'Spánn',away:'Belgía',result:null,advancer:null},
-  {id:'qf_4',round:'qf',home:'Argentína',away:'Kólumbía',result:null,advancer:null},
+  {id:'qf_1',round:'qf',home:null,away:null,result:null,advancer:null},
+  {id:'qf_2',round:'qf',home:null,away:null,result:null,advancer:null},
+  {id:'qf_3',round:'qf',home:null,away:null,result:null,advancer:null},
+  {id:'qf_4',round:'qf',home:null,away:null,result:null,advancer:null},
   // Semi finals
-  {id:'sf_1',round:'sf',home:'Frakkland',away:'Spánn',result:null,advancer:null},
-  {id:'sf_2',round:'sf',home:'England',away:'Argentína',result:null,advancer:null},
+  {id:'sf_1',round:'sf',home:null,away:null,result:null,advancer:null},
+  {id:'sf_2',round:'sf',home:null,away:null,result:null,advancer:null},
   // 3rd place
-  {id:'tp_1',round:'tp',home:'Spánn',away:'Argentína',result:null,advancer:null},
+  {id:'tp_1',round:'tp',home:null,away:null,result:null,advancer:null},
   // Final
-  {id:'f_1',round:'f',home:'Frakkland',away:'England',result:null,advancer:null},
+  {id:'f_1',round:'f',home:null,away:null,result:null,advancer:null},
 ];
 
 // Gunnar's knockout guesses per match
@@ -1371,6 +1386,7 @@ function renderKnockout(){
       const scoreStr = hasResult ? `${m.result.h}–${m.result.a}` : '·–·';
       const advStr = hasResult && m.advancer ? ` (${m.advancer} á pen.)` : '';
 
+      if(!m.home || !m.away) return; // skip unknown matches
       html += `<div class="ko-match">
         <div class="ko-match-header">
           <span class="ko-match-teams">${m.home} vs ${m.away}</span>
