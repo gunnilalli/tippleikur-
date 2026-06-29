@@ -368,7 +368,8 @@ const KNOCKOUT_RESULTS = {
 // 10 stig — réttur markakóngur
 //  5 stig — réttur markfjöldi markakóngs (aðeins ef leikmaður er líka réttur)
 function computeKnockoutScore(playerName){
-  const kg = KNOCKOUT_GUESSES[playerName];
+  // Get bonus guesses from KO_MATCH_GUESSES (new format) or KNOCKOUT_GUESSES (old)
+  const kg = KO_MATCH_GUESSES[playerName] || KNOCKOUT_GUESSES[playerName];
   const kr = KNOCKOUT_RESULTS;
   if(!kg || !kr.champion) return { total:0, champion:0, runnerUp:0, third:0, topScorer:0, topScorerGoals:0 };
   let champion=0, runnerUp=0, third=0, topScorer=0, topScorerGoals=0;
@@ -1177,19 +1178,106 @@ const KO_MATCHES = [
 // advancer only needed if guessing draw after 120min
 const KO_MATCH_GUESSES = {
   "Gunnar": {
-    "r32_1":{h:1,a:2},"r32_2":{h:2,a:0},"r32_3":{h:2,a:1},"r32_4":{h:2,a:0},
-    "r32_5":{h:3,a:1},"r32_6":{h:1,a:2},"r32_7":{h:1,a:0},"r32_8":{h:3,a:0},
-    "r32_9":{h:2,a:0},"r32_10":{h:1,a:1,advancer:"Belgía"},"r32_11":{h:2,a:2,advancer:"Kólumbía"},
-    "r32_12":{h:2,a:0},"r32_13":{h:3,a:0},"r32_14":{h:2,a:1},"r32_15":{h:1,a:2},"r32_16":{h:0,a:1},
-    "r16_1":{h:1,a:2},"r16_2":{h:1,a:2},"r16_3":{h:3,a:2},"r16_4":{h:0,a:1},
-    "r16_5":{h:1,a:3},"r16_6":{h:0,a:1},"r16_7":{h:3,a:0},"r16_8":{h:0,a:1},
-    "qf_1":{h:2,a:0},"qf_2":{h:2,a:1},"qf_3":{h:1,a:0},"qf_4":{h:2,a:0},
-    "sf_1":{h:3,a:2},"sf_2":{h:2,a:2,advancer:"Brasilía"},
-    "tp_1":{h:1,a:2},
-    "f_1":{h:2,a:0},
+    "r32_1":[2,0],"r32_2":[3,1],"r32_3":[1,2],"r32_4":[1,2],
+    "r32_5":[1,0],"r32_6":[3,0],"r32_7":[2,0],"r32_8":[1,1,"Belgía"],
+    "r32_9":[2,2,"Kólumbía"],"r32_10":[2,0],"r32_11":[3,0],"r32_12":[2,1],
+    "r32_13":[1,2],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[2,1],
+    "r16_1":[3,2],"r16_2":[0,1],"r16_3":[1,3],"r16_4":[1,2],
+    "r16_5":[0,1],"r16_6":[3,0],"r16_7":[0,1],"r16_8":[1,2],
+    "qf_1":[2,1],"qf_2":[1,0],"qf_3":[2,0],"qf_4":[2,0],
+    "sf_1":[3,2],"sf_2":[2,2,"Brasilía"],"tp_1":[1,2],"f_1":[2,0],
+    champion:"Frakkland",runnerUp:"Brasilía",third:"Argentína",topScorer:"Oyarzabal",topScorerGoals:6,
   },
-  "Sprölli":null,"Illugi":null,"Svet":null,"Jóki":null,"Meddi":null,
-  "Marri":null,"Fáni":null,"Hroar":null,"Formy":null,"Geimur":null,
+  "Meddi": {
+    "r32_1":[1,0],"r32_2":[1,0],"r32_3":[0,1],"r32_4":[1,2],
+    "r32_5":[2,1],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[1,1,"Belgía"],
+    "r32_9":[1,0],"r32_10":[1,0],"r32_11":[2,0],"r32_12":[2,1],
+    "r32_13":[2,1],"r32_14":[1,1,"Ástralía"],"r32_15":[1,0],"r32_16":[2,1],
+    "r16_1":[2,1],"r16_2":[1,2],"r16_3":[1,1,"Portúgal"],"r16_4":[1,2],
+    "r16_5":[1,1,"Belgía"],"r16_6":[1,0],"r16_7":[1,1,"Kólumbía"],"r16_8":[1,2],
+    "qf_1":[1,1,"Brasilía"],"qf_2":[2,1],"qf_3":[1,0],"qf_4":[2,1],
+    "sf_1":[2,1],"sf_2":[1,2],"tp_1":[2,0],"f_1":[3,1],
+    champion:"Frakkland",runnerUp:"Argentína",third:"Spánn",topScorer:"Mbappé",topScorerGoals:7,
+  },
+  "Marri": {
+    "r32_1":[2,1],"r32_2":[3,0],"r32_3":[1,2],"r32_4":[0,2],
+    "r32_5":[2,0],"r32_6":[2,0],"r32_7":[2,0],"r32_8":[0,0,"Senegal"],
+    "r32_9":[1,0],"r32_10":[3,2],"r32_11":[4,0],"r32_12":[1,0],
+    "r32_13":[1,1,"Sviss"],"r32_14":[1,2],"r32_15":[3,1],"r32_16":[1,1,"Holland"],
+    "r16_1":[2,2,"Brasilía"],"r16_2":[1,1,"England"],"r16_3":[1,2],"r16_4":[1,2],
+    "r16_5":[2,1],"r16_6":[3,0],"r16_7":[1,1,"Kólumbía"],"r16_8":[1,3],
+    "qf_1":[1,2],"qf_2":[3,0],"qf_3":[2,0],"qf_4":[3,1],
+    "sf_1":[3,1],"sf_2":[2,1],"tp_1":[3,0],"f_1":[2,1],
+    champion:"Frakkland",runnerUp:"England",third:"Spánn",topScorer:"Haaland",topScorerGoals:6,
+  },
+  "Svet": {
+    "r32_1":[2,1],"r32_2":[4,1],"r32_3":[1,3],"r32_4":[1,2],
+    "r32_5":[1,1,"Mexíkó"],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[2,1],
+    "r32_9":[2,0],"r32_10":[3,1],"r32_11":[4,0],"r32_12":[2,1],
+    "r32_13":[2,1],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[2,1],
+    "r16_1":[3,2],"r16_2":[1,2],"r16_3":[1,1,"Portúgal"],"r16_4":[1,3],
+    "r16_5":[1,2],"r16_6":[3,0],"r16_7":[1,2],"r16_8":[0,2],
+    "qf_1":[1,1,"Brasilía"],"qf_2":[2,0],"qf_3":[2,1],"qf_4":[2,0],
+    "sf_1":[2,1],"sf_2":[1,1,"Brasilía"],"tp_1":[2,1],"f_1":[3,2],
+    champion:"Frakkland",runnerUp:"Argentína",third:"Spánn",topScorer:"Mbappé",topScorerGoals:6,
+  },
+  "Illugi": {
+    "r32_1":[2,1],"r32_2":[3,1],"r32_3":[1,3],"r32_4":[1,3],
+    "r32_5":[1,1,"Mexíkó"],"r32_6":[2,0],"r32_7":[1,0],"r32_8":[1,3,"Senegal"],
+    "r32_9":[3,2],"r32_10":[3,0],"r32_11":[2,0],"r32_12":[2,2,"Portúgal"],
+    "r32_13":[0,0,"Sviss"],"r32_14":[0,1],"r32_15":[3,0],"r32_16":[2,2,"Holland"],
+    "r16_1":[2,3],"r16_2":[1,1,"England"],"r16_3":[3,2],"r16_4":[2,1],
+    "r16_5":[1,2],"r16_6":[2,1],"r16_7":[1,2],"r16_8":[0,3],
+    "qf_1":[1,0],"qf_2":[2,1],"qf_3":[4,2],"qf_4":[2,1],
+    "sf_1":[0,0,"Portúgal"],"sf_2":[1,2],"tp_1":[1,3],"f_1":[2,1],
+    champion:"Þýskaland",runnerUp:"Argentína",third:"Noregur",topScorer:"Havertz",topScorerGoals:null,
+  },
+  "Hroar": {
+    "r32_1":[2,1],"r32_2":[2,0],"r32_3":[1,2],"r32_4":[1,2],
+    "r32_5":[2,1],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[2,1],
+    "r32_9":[2,1],"r32_10":[3,1],"r32_11":[2,0],"r32_12":[1,2],
+    "r32_13":[2,1],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[1,2],
+    "r16_1":[3,2],"r16_2":[1,3],"r16_3":[1,2],"r16_4":[1,3],
+    "r16_5":[2,1],"r16_6":[3,1],"r16_7":[0,2],"r16_8":[1,2],
+    "qf_1":[2,1],"qf_2":[3,1],"qf_3":[3,1],"qf_4":[2,1],
+    "sf_1":[2,1],"sf_2":[1,3],"tp_1":[2,1],"f_1":[2,3],
+    champion:"Argentína",runnerUp:"Frakkland",third:"Spánn",topScorer:"Lamine Yamal",topScorerGoals:6,
+  },
+  "Geimur": {
+    "r32_1":[2,1],"r32_2":[4,0],"r32_3":[0,2],"r32_4":[1,2],
+    "r32_5":[1,2],"r32_6":[2,0],"r32_7":[1,0],"r32_8":[1,1,"Senegal"],
+    "r32_9":[3,1],"r32_10":[3,2],"r32_11":[5,1],"r32_12":[2,1],
+    "r32_13":[2,0],"r32_14":[1,1,"Ástralía"],"r32_15":[3,0],"r32_16":[2,1],
+    "r16_1":[2,1],"r16_2":[2,2,"England"],"r16_3":[2,3],"r16_4":[1,2],
+    "r16_5":[1,2],"r16_6":[3,0],"r16_7":[1,2],"r16_8":[0,2],
+    "qf_1":[2,0],"qf_2":[2,1],"qf_3":[2,0],"qf_4":[3,1],
+    "sf_1":[2,1],"sf_2":[3,3,"Brasilía"],"tp_1":[2,0],"f_1":[2,0],
+    champion:"Frakkland",runnerUp:"Argentína",third:"Spánn",topScorer:"Haaland",topScorerGoals:null,
+  },
+  "Formy": {
+    "r32_1":[4,1],"r32_2":[5,1],"r32_3":[1,2],"r32_4":[1,2],
+    "r32_5":[3,1],"r32_6":[3,1],"r32_7":[2,0],"r32_8":[2,0],
+    "r32_9":[2,1],"r32_10":[3,1],"r32_11":[6,0],"r32_12":[2,1],
+    "r32_13":[3,1],"r32_14":[0,2],"r32_15":[3,0],"r32_16":[3,2],
+    "r16_1":[2,0],"r16_2":[1,2],"r16_3":[1,0],"r16_4":[1,3],
+    "r16_5":[1,3],"r16_6":[3,0],"r16_7":[1,2],"r16_8":[1,3],
+    "qf_1":[2,0],"qf_2":[3,1],"qf_3":[2,1],"qf_4":[2,0],
+    "sf_1":[2,0],"sf_2":[2,1],"tp_1":[1,2],"f_1":[1,0],
+    champion:"Frakkland",runnerUp:"Brasilía",third:"Argentína",topScorer:"Harry Kane",topScorerGoals:7,
+  },
+  "Sprölli":null,
+  "Jóki": {
+    "r32_1":[2,1],"r32_2":[3,0],"r32_3":[2,1],"r32_4":[1,3],
+    "r32_5":[1,0],"r32_6":[2,0],"r32_7":[3,1],"r32_8":[1,1,"Belgía"],
+    "r32_9":[3,2],"r32_10":[2,0],"r32_11":[4,0],"r32_12":[2,1],
+    "r32_13":[0,1],"r32_14":[1,1,"Ástralía"],"r32_15":[2,0],"r32_16":[2,1],
+    "r16_1":[2,1],"r16_2":[1,2],"r16_3":[2,2,"Portúgal"],"r16_4":[1,2],
+    "r16_5":[1,2],"r16_6":[3,0],"r16_7":[0,1],"r16_8":[0,2],
+    "qf_1":[1,1,"Brasilía"],"qf_2":[2,1],"qf_3":[1,0],"qf_4":[2,0],
+    "sf_1":[2,2,"Portúgal"],"sf_2":[2,1],"tp_1":[2,1],"f_1":[2,0],
+    champion:"Portúgal",runnerUp:"Brasilía",third:"Frakkland",topScorer:"Harry Kane",topScorerGoals:6,
+  },
+  "Fáni":null,
 };
 
 function getKoOutcome(h, a, advancer){
@@ -1200,14 +1288,32 @@ function getKoOutcome(h, a, advancer){
 
 function scoreKoMatch(guess, real){
   if(!guess || !real || real.h==null) return 0;
-  const realAdv = real.advancer || (real.h > real.a ? 'home' : real.a > real.h ? 'away' : null);
-  const guessAdv = guess.advancer || (guess.h > guess.a ? 'home' : guess.a > guess.h ? 'away' : null);
-  // Exact score
-  if(guess.h === real.h && guess.a === real.a) return 3;
-  // Correct advancer
-  if(realAdv && guessAdv && realAdv === guessAdv) return 2;
-  // Draw + correct penalty winner
-  if(real.h === real.a && guess.h === guess.a && real.advancer && guess.advancer === real.advancer) return 2;
+  // Handle array format [h, a] or [h, a, advancer]
+  const gh = Array.isArray(guess) ? guess[0] : guess.h;
+  const ga = Array.isArray(guess) ? guess[1] : guess.a;
+  const gAdv = Array.isArray(guess) ? (guess[2]||null) : (guess.advancer||null);
+  const rh = real.h, ra = real.a;
+  const rAdv = real.advancer;
+
+  // Determine who advances from guess
+  let guessWinner = gh > ga ? 'home' : ga > gh ? 'away' : (gAdv || null);
+  // Determine who advances from real
+  let realWinner = rh > ra ? 'home' : ra > rh ? 'away' : (rAdv || null);
+  // Convert advancer names to home/away for real
+  if(rAdv && real.home && real.away){
+    if(rAdv === real.home) realWinner = 'home';
+    else if(rAdv === real.away) realWinner = 'away';
+  }
+  // Convert guess advancer to home/away using KO_MATCHES
+  if(gAdv && real.home && real.away){
+    if(gAdv === real.home) guessWinner = 'home';
+    else if(gAdv === real.away) guessWinner = 'away';
+  }
+
+  // Exact score (ignoring advancer)
+  if(gh === rh && ga === ra) return 3;
+  // Correct winner
+  if(realWinner && guessWinner && realWinner === guessWinner) return 2;
   return 0;
 }
 
@@ -1218,7 +1324,10 @@ function computeKnockoutMatchScore(playerName){
   KO_MATCHES.forEach(m => {
     if(!m.result) return;
     const g = guesses[m.id];
-    total += scoreKoMatch(g, m.result);
+    if(!g) return;
+    // Pass match home/away so scoreKoMatch can resolve advancer names
+    const r = {...m.result, home: m.home, away: m.away};
+    total += scoreKoMatch(g, r);
   });
   return total;
 }
