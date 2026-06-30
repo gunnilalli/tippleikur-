@@ -1167,7 +1167,7 @@ const KO_RESULT_OVERRIDES = {
   'r32_1': {h:2, a:1, advancer:null},      // Brasilía 2-1 Japan
   'r32_2': {h:3, a:0, advancer:null},       // Frakkland 3-0 Svíþjóð
   'r32_15': {h:1, a:1, advancer:'Paragvæ'}, // Þýskaland 1-1 Paragvæ (Paragvæ á pen.)
-  'r32_16': {h:1, a:1, advancer:'Morokkó'}, // Holland 1-1 Marokkó (Marokkó á pen.)
+  'r32_16': {h:1, a:1, advancer:'Marokkó'}, // Holland 1-1 Marokkó (Marokkó á pen.)
 };
 
 const KO_ROUNDS = [
@@ -1520,7 +1520,7 @@ Object.entries(RESULT_OVERRIDES).forEach(([id,r])=>{
 // Apply KO overrides
 Object.entries(KO_RESULT_OVERRIDES).forEach(([id,r])=>{
   const m=KO_MATCHES.find(x=>x.id===id);
-  if(m) m.result={...r,auto:true};
+  if(m){ m.result={...r,auto:true}; m.advancer=r.advancer||null; }
 });
 saveResults();
 initAdmin();
