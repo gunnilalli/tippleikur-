@@ -638,12 +638,12 @@ async function fetchAndUpdate(){
         // Try to find the right round from API stage
         const stage = m.stage||'';
         let roundId = null;
-        if(stage.includes('ROUND_OF_16')) roundId='r16';
-        else if(stage.includes('QUARTER')) roundId='qf';
-        else if(stage.includes('SEMI')) roundId='sf';
-        else if(stage.includes('THIRD')) roundId='tp';
-        else if(stage.includes('FINAL')&&!stage.includes('SEMI')&&!stage.includes('THIRD')) roundId='f';
-        else if(stage.includes('ROUND_OF_32')) roundId='r32';
+        if(stage==='LAST_16') roundId='r16';
+        else if(stage==='LAST_32') roundId='r32';
+        else if(stage==='QUARTER_FINALS') roundId='qf';
+        else if(stage==='SEMI_FINALS') roundId='sf';
+        else if(stage==='THIRD_PLACE') roundId='tp';
+        else if(stage==='FINAL') roundId='f';
         if(roundId){
           koMatch = KO_MATCHES.find(x=>x.round===roundId&&x.home===null);
           if(koMatch){ koMatch.home=hName; koMatch.away=aName; }
@@ -652,10 +652,19 @@ async function fetchAndUpdate(){
       if(koMatch&&m.score?.fullTime?.home!=null){
         if(!koMatch.result||koMatch.result.auto!==false){
           // Use extraTime if available (120min), else fullTime (90min)
+          // Score after 90 or 120 min (regularTime + extraTime if exists, never penalties)
+          const rt=m.score.regularTime;
           const et=m.score.extraTime;
           const ft=m.score.fullTime;
-          const finalH = (et&&et.home!=null) ? et.home : ft.home;
-          const finalA = (et&&et.away!=null) ? et.away : ft.away;
+          let finalH, finalA;
+          if(rt&&rt.home!=null){
+            // Has regularTime — add extraTime if played
+            finalH = rt.home + (et&&et.home!=null ? et.home : 0);
+            finalA = rt.away + (et&&et.away!=null ? et.away : 0);
+          } else {
+            // No regularTime — use fullTime (group stage matches)
+            finalH = ft.home; finalA = ft.away;
+          }
           // Penalty winner
           const pen=m.score.penalties;
           let advancer=null;
@@ -1156,6 +1165,8 @@ function renderBreakdown(){
 // Known correct KO results that override API errors
 const KO_RESULT_OVERRIDES = {
   'r32_1': {h:2, a:1, advancer:null},      // Brasilía 2-1 Japan
+  'r32_2': {h:3, a:0, advancer:null},       // Frakkland 3-0 Svíþjóð
+  'r32_15': {h:1, a:1, advancer:'Paragvæ'}, // Þýskaland 1-1 Paragvæ (Paragvæ á pen.)
   'r32_16': {h:1, a:1, advancer:'Morokkó'}, // Holland 1-1 Marokkó (Marokkó á pen.)
 };
 
@@ -1368,32 +1379,29 @@ function getKoOutcome(h, a, advancer){
 
 function scoreKoMatch(guess, real){
   if(!guess || !real || real.h==null) return 0;
-  // Handle array format [h, a] or [h, a, advancer]
   const gh = Array.isArray(guess) ? guess[0] : guess.h;
   const ga = Array.isArray(guess) ? guess[1] : guess.a;
   const gAdv = Array.isArray(guess) ? (guess[2]||null) : (guess.advancer||null);
   const rh = real.h, ra = real.a;
-  const rAdv = real.advancer;
+  const rAdv = real.advancer; // team name e.g. "Marokkó"
 
-  // Determine who advances from guess
-  let guessWinner = gh > ga ? 'home' : ga > gh ? 'away' : (gAdv || null);
-  // Determine who advances from real
-  let realWinner = rh > ra ? 'home' : ra > rh ? 'away' : (rAdv || null);
-  // Convert advancer names to home/away for real
-  if(rAdv && real.home && real.away){
-    if(rAdv === real.home) realWinner = 'home';
-    else if(rAdv === real.away) realWinner = 'away';
-  }
-  // Convert guess advancer to home/away using KO_MATCHES
-  if(gAdv && real.home && real.away){
-    if(gAdv === real.home) guessWinner = 'home';
-    else if(gAdv === real.away) guessWinner = 'away';
-  }
-
-  // Exact score (ignoring advancer)
+  // Exact score — always 3 pts regardless of advancer
   if(gh === rh && ga === ra) return 3;
-  // Correct winner
-  if(realWinner && guessWinner && realWinner === guessWinner) return 2;
+
+  // Determine real advancer as team name
+  let realTeam = null;
+  if(rh > ra) realTeam = real.home;
+  else if(ra > rh) realTeam = real.away;
+  else if(rAdv) realTeam = rAdv; // penalty winner
+
+  // Determine guess advancer as team name
+  let guessTeam = null;
+  if(gh > ga) guessTeam = real.home;       // guess home wins
+  else if(ga > gh) guessTeam = real.away;   // guess away wins
+  else if(gAdv) guessTeam = gAdv;           // guess draw, advancer named
+
+  // Correct advancer
+  if(realTeam && guessTeam && realTeam === guessTeam) return 2;
   return 0;
 }
 
