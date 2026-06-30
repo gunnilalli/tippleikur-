@@ -338,19 +338,7 @@ const GUESSES = {
 
 // ── KNOCKOUT GUESSES ─────────────────────────────────────────────────────────
 // Format per player: { champion, runnerUp, third, topScorer, topScorerGoals }
-const KNOCKOUT_GUESSES = {
-  "Gunnar":  { champion:"Frakkland", runnerUp:"Brasilía",  third:"Argentína", topScorer:"Oyarzabal", topScorerGoals:6 },
-  "Sprölli": null,
-  "Illugi":  null,
-  "Svet":    null,
-  "Jóki":    null,
-  "Meddi":   null,
-  "Marri":   null,
-  "Fáni":    null,
-  "Hroar":   null,
-  "Formy":   null,
-  "Geimur":  null,
-};
+// KNOCKOUT_GUESSES removed — all data now in KO_MATCH_GUESSES
 
 // Actual knockout results — fill in when known
 const KNOCKOUT_RESULTS = {
@@ -369,7 +357,7 @@ const KNOCKOUT_RESULTS = {
 //  5 stig — réttur markfjöldi markakóngs (aðeins ef leikmaður er líka réttur)
 function computeKnockoutScore(playerName){
   // Get bonus guesses from KO_MATCH_GUESSES (new format) or KNOCKOUT_GUESSES (old)
-  const kg = KO_MATCH_GUESSES[playerName] || KNOCKOUT_GUESSES[playerName];
+  const kg = KO_GUESSES[playerName];
   const kr = KNOCKOUT_RESULTS;
   if(!kg || !kr.champion) return { total:0, champion:0, runnerUp:0, third:0, topScorer:0, topScorerGoals:0 };
   let champion=0, runnerUp=0, third=0, topScorer=0, topScorerGoals=0;
@@ -683,6 +671,11 @@ async function fetchAndUpdate(){
     Object.entries(RESULT_OVERRIDES).forEach(([id,r])=>{
       results[parseInt(id)]={h:r[0],a:r[1],auto:true};
     });
+    // Apply KO overrides after fetch too
+    Object.entries(KO_RESULT_OVERRIDES).forEach(([id,r])=>{
+      const m=KO_MATCHES.find(x=>x.id===id);
+      if(m&&(!m.result||m.result.auto!==false)) m.result={...r,auto:true};
+    });
     saveResults();
     const now=new Date().toLocaleTimeString('is-IS',{hour:'2-digit',minute:'2-digit'});
     if(status) status.textContent='Síðast uppfært '+now;
@@ -903,37 +896,61 @@ function renderStats(){
 
   // Fun facts
   const facts=[];
-  // Most popular score prediction for match 1
+
+  // Most popular score for match 1
   const m1guesses=PLAYERS.map(p=>GUESSES[p.name][1]).map(g=>g[0]+'-'+g[1]);
   const m1counts={};m1guesses.forEach(g=>m1counts[g]=(m1counts[g]||0)+1);
   const m1top=Object.entries(m1counts).sort((a,b)=>b[1]-a[1])[0];
   facts.push(`🔮 Vinsælasta tippið á leik #1 (Mexíkó–Suður-Afríka) var <strong>${m1top[0]}</strong> — giskaðir af ${m1top[1]} þátttakendum.`);
 
-  // Who had most 0-0 predictions
+  // Most 0-0 predictions
   const zerozero=PLAYERS.map(p=>({name:p.display,count:Object.values(GUESSES[p.name]).filter(g=>g[0]===0&&g[1]===0).length})).sort((a,b)=>b.count-a.count)[0];
-  if(zerozero.count>0) facts.push(`😴 <strong>${zerozero.name}</strong> trúir mest á leiðinlegar leikjur — ${zerozero.count} tipp á 0-0.`);
+  if(zerozero.count>0) facts.push(`😴 <strong>${zerozero.name}</strong> trúir mest á leiðinlegar leikjur — ${zerozero.count} tipp á 0-0 í riðlakeppni.`);
 
-  // Highest single score prediction
+  // Highest group stage score prediction
   let highGoal={player:'',match:0,score:'',goals:0};
   PLAYERS.forEach(p=>Object.entries(GUESSES[p.name]).forEach(([mid,g])=>{
     const tot=g[0]+g[1];if(tot>highGoal.goals){highGoal={player:p.display,match:mid,score:g[0]+'-'+g[1],goals:tot};}
   }));
-  facts.push(`🚀 Hámarkstipp: <strong>${highGoal.player}</strong> tippaði ${highGoal.score} í leik #${highGoal.match} — ${highGoal.goals} mörk í einum leik!`);
+  facts.push(`🚀 Hámarkstipp í riðlakeppni: <strong>${highGoal.player}</strong> tippaði ${highGoal.score} í leik #${highGoal.match} — ${highGoal.goals} mörk!`);
 
-  // Agreement on match 9 (Germany vs Curacao)
+  // Agreement on match 9
   const m9=PLAYERS.map(p=>GUESSES[p.name][9]).map(g=>g[0]+'-'+g[1]);
   const m9counts={};m9.forEach(g=>m9counts[g]=(m9counts[g]||0)+1);
   const m9top=Object.entries(m9counts).sort((a,b)=>b[1]-a[1])[0];
   facts.push(`🇩🇪 Leik #9 (Þýskaland–Curaçao): ${m9top[1]} af 11 tippu <strong>${m9top[0]}</strong>.`);
 
+  // Who leads after group stage
   if(played>0){
-    // Who scored in round 1
     const r1matches=MATCHES.filter(m=>m.r===1&&results[m.id]);
     const r1scores=PLAYERS.map(p=>({name:p.display,pts:r1matches.reduce((s,m)=>{
       const g=GUESSES[p.name][m.id],r=results[m.id];return s+(g&&r?scoreMatch(g[0],g[1],r.h,r.a):0);
     },0)})).sort((a,b)=>b.pts-a.pts);
-    if(r1scores[0].pts>0) facts.push(`⚡ Í umferð 1 er <strong>${r1scores[0].name}</strong> best með ${r1scores[0].pts} stig.`);
+    if(r1scores[0].pts>0) facts.push(`⚡ Í 1. umferð riðlakeppni var <strong>${r1scores[0].name}</strong> best með ${r1scores[0].pts} stig.`);
   }
+
+  // Knockout bonus: most popular champion pick
+  const champCounts={};
+  PLAYERS.forEach(p=>{ const c=KO_GUESSES[p.name]?.champion; if(c) champCounts[c]=(champCounts[c]||0)+1; });
+  const champEntries=Object.entries(champCounts).sort((a,b)=>b[1]-a[1]);
+  if(champEntries.length>0){
+    facts.push(`🏆 Vinsælasti heimsmeistari: <strong>${champEntries[0][0]}</strong> — ${champEntries[0][1]} af 11 giskaðu á hann.`);
+  }
+
+  // How many picked France as champion
+  const franceCount=PLAYERS.filter(p=>KO_GUESSES[p.name]?.champion==='Frakkland').length;
+  const argCount=PLAYERS.filter(p=>KO_GUESSES[p.name]?.champion==='Argentína').length;
+  if(franceCount>0&&argCount>0) facts.push(`🇫🇷 ${franceCount} giskaðu á Frakkland, 🇦🇷 ${argCount} á Argentínu sem heimsmeistara.`);
+
+  // Top scorer most popular pick
+  const tsCounts={};
+  PLAYERS.forEach(p=>{ const ts=KO_GUESSES[p.name]?.topScorer; if(ts) tsCounts[ts]=(tsCounts[ts]||0)+1; });
+  const tsEntries=Object.entries(tsCounts).sort((a,b)=>b[1]-a[1]);
+  if(tsEntries.length>0) facts.push(`⚽ Vinsælasti markakóngur: <strong>${tsEntries[0][0]}</strong> — ${tsEntries[0][1]} giskaðu á hann.`);
+
+  // Unique champion picks
+  const uniqueChamps=new Set(PLAYERS.map(p=>KO_GUESSES[p.name]?.champion).filter(Boolean));
+  facts.push(`🌍 Þátttakendur giskaðu á <strong>${uniqueChamps.size}</strong> mismunandi heimsmeistarar: ${[...uniqueChamps].join(', ')}.`);
 
   document.getElementById('fun-facts').innerHTML=facts.map(f=>`<div style="padding:8px 12px;background:var(--bg);border-radius:var(--radius);font-size:13px;line-height:1.5">${f}</div>`).join('');
 }
@@ -1136,6 +1153,12 @@ function renderBreakdown(){
 
 
 // ── KNOCKOUT MATCHES ──────────────────────────────────────────────────────────
+// Known correct KO results that override API errors
+const KO_RESULT_OVERRIDES = {
+  'r32_1': {h:2, a:1, advancer:null},      // Brasilía 2-1 Japan
+  'r32_16': {h:1, a:1, advancer:'Morokkó'}, // Holland 1-1 Marokkó (Marokkó á pen.)
+};
+
 const KO_ROUNDS = [
   { id:'r32', label:'32 liða úrslit  ·  28. jún – 4. júl' },
   { id:'r16', label:'16 liða úrslit  ·  6.–9. júl' },
@@ -1188,129 +1211,151 @@ const KO_MATCHES = [
   {id:'f_1',round:'f',home:null,away:null,result:null,advancer:null},
 ];
 
-// Gunnar's knockout guesses per match
-// Format: { matchId: { h, a, advancer } }
-// advancer only needed if guessing draw after 120min
-const KO_MATCH_GUESSES = {
+// Knockout match guesses per player
+// Format: KO_GUESSES[playerName][matchId] = [home, away] or [home, away, advancer]
+// Bonus picks: KO_GUESSES[playerName].champion etc.
+const KO_GUESSES = {
   "Gunnar": {
-    "r32_1":[2,0],"r32_2":[3,1],"r32_3":[1,2],"r32_4":[1,2],
-    "r32_5":[1,0],"r32_6":[3,0],"r32_7":[2,0],"r32_8":[1,1,"Belgía"],
-    "r32_9":[2,2,"Kólumbía"],"r32_10":[2,0],"r32_11":[3,0],"r32_12":[2,1],
-    "r32_13":[1,2],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[2,1],
-    "r16_1":[3,2],"r16_2":[0,1],"r16_3":[1,3],"r16_4":[1,2],
-    "r16_5":[0,1],"r16_6":[3,0],"r16_7":[0,1],"r16_8":[1,2],
-    "qf_1":[2,1],"qf_2":[1,0],"qf_3":[2,0],"qf_4":[2,0],
-    "sf_1":[3,2],"sf_2":[2,2,"Brasilía"],"tp_1":[1,2],"f_1":[2,0],
+    matches: {
+      "r32_1":[2,0],"r32_2":[3,1],"r32_3":[1,2],"r32_4":[1,2],
+      "r32_5":[1,0],"r32_6":[3,0],"r32_7":[2,0],"r32_8":[1,1,"Belgía"],
+      "r32_9":[2,2,"Kólumbía"],"r32_10":[2,0],"r32_11":[3,0],"r32_12":[2,1],
+      "r32_13":[1,2],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[2,1],
+      "r16_1":[3,2],"r16_2":[0,1],"r16_3":[1,3],"r16_4":[1,2],
+      "r16_5":[0,1],"r16_6":[3,0],"r16_7":[0,1],"r16_8":[1,2],
+      "qf_1":[2,1],"qf_2":[1,0],"qf_3":[2,0],"qf_4":[2,0],
+      "sf_1":[3,2],"sf_2":[2,2,"Brasilía"],"tp_1":[1,2],"f_1":[2,0],
+    },
     champion:"Frakkland",runnerUp:"Brasilía",third:"Argentína",topScorer:"Oyarzabal",topScorerGoals:6,
   },
   "Meddi": {
-    "r32_1":[1,0],"r32_2":[1,0],"r32_3":[0,1],"r32_4":[1,2],
-    "r32_5":[2,1],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[1,1,"Belgía"],
-    "r32_9":[1,0],"r32_10":[1,0],"r32_11":[2,0],"r32_12":[2,1],
-    "r32_13":[2,1],"r32_14":[1,1,"Ástralía"],"r32_15":[1,0],"r32_16":[2,1],
-    "r16_1":[2,1],"r16_2":[1,2],"r16_3":[1,1,"Portúgal"],"r16_4":[1,2],
-    "r16_5":[1,1,"Belgía"],"r16_6":[1,0],"r16_7":[1,1,"Kólumbía"],"r16_8":[1,2],
-    "qf_1":[1,1,"Brasilía"],"qf_2":[2,1],"qf_3":[1,0],"qf_4":[2,1],
-    "sf_1":[2,1],"sf_2":[1,2],"tp_1":[2,0],"f_1":[3,1],
+    matches: {
+      "r32_1":[1,0],"r32_2":[1,0],"r32_3":[0,1],"r32_4":[1,2],
+      "r32_5":[2,1],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[1,1,"Belgía"],
+      "r32_9":[1,0],"r32_10":[1,0],"r32_11":[2,0],"r32_12":[2,1],
+      "r32_13":[2,1],"r32_14":[1,1,"Ástralía"],"r32_15":[1,0],"r32_16":[2,1],
+      "r16_1":[2,1],"r16_2":[1,2],"r16_3":[1,1,"Portúgal"],"r16_4":[1,2],
+      "r16_5":[1,1,"Belgía"],"r16_6":[1,0],"r16_7":[1,1,"Kólumbía"],"r16_8":[1,2],
+      "qf_1":[1,1,"Brasilía"],"qf_2":[2,1],"qf_3":[1,0],"qf_4":[2,1],
+      "sf_1":[2,1],"sf_2":[1,2],"tp_1":[2,0],"f_1":[3,1],
+    },
     champion:"Frakkland",runnerUp:"Argentína",third:"Spánn",topScorer:"Mbappé",topScorerGoals:7,
   },
   "Marri": {
-    "r32_1":[2,1],"r32_2":[3,0],"r32_3":[1,2],"r32_4":[0,2],
-    "r32_5":[2,0],"r32_6":[2,0],"r32_7":[2,0],"r32_8":[0,0,"Senegal"],
-    "r32_9":[1,0],"r32_10":[3,2],"r32_11":[4,0],"r32_12":[1,0],
-    "r32_13":[1,1,"Sviss"],"r32_14":[1,2],"r32_15":[3,1],"r32_16":[1,1,"Holland"],
-    "r16_1":[2,2,"Brasilía"],"r16_2":[1,1,"England"],"r16_3":[1,2],"r16_4":[1,2],
-    "r16_5":[2,1],"r16_6":[3,0],"r16_7":[1,1,"Kólumbía"],"r16_8":[1,3],
-    "qf_1":[1,2],"qf_2":[3,0],"qf_3":[2,0],"qf_4":[3,1],
-    "sf_1":[3,1],"sf_2":[2,1],"tp_1":[3,0],"f_1":[2,1],
+    matches: {
+      "r32_1":[2,1],"r32_2":[3,0],"r32_3":[1,2],"r32_4":[0,2],
+      "r32_5":[2,0],"r32_6":[2,0],"r32_7":[2,0],"r32_8":[0,0,"Senegal"],
+      "r32_9":[1,0],"r32_10":[3,2],"r32_11":[4,0],"r32_12":[1,0],
+      "r32_13":[1,1,"Sviss"],"r32_14":[1,2],"r32_15":[3,1],"r32_16":[1,1,"Holland"],
+      "r16_1":[2,2,"Brasilía"],"r16_2":[1,1,"England"],"r16_3":[1,2],"r16_4":[1,2],
+      "r16_5":[2,1],"r16_6":[3,0],"r16_7":[1,1,"Kólumbía"],"r16_8":[1,3],
+      "qf_1":[1,2],"qf_2":[3,0],"qf_3":[2,0],"qf_4":[3,1],
+      "sf_1":[3,1],"sf_2":[2,1],"tp_1":[3,0],"f_1":[2,1],
+    },
     champion:"Frakkland",runnerUp:"England",third:"Spánn",topScorer:"Haaland",topScorerGoals:6,
   },
   "Svet": {
-    "r32_1":[2,1],"r32_2":[4,1],"r32_3":[1,3],"r32_4":[1,2],
-    "r32_5":[1,1,"Mexíkó"],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[2,1],
-    "r32_9":[2,0],"r32_10":[3,1],"r32_11":[4,0],"r32_12":[2,1],
-    "r32_13":[2,1],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[2,1],
-    "r16_1":[3,2],"r16_2":[1,2],"r16_3":[1,1,"Portúgal"],"r16_4":[1,3],
-    "r16_5":[1,2],"r16_6":[3,0],"r16_7":[1,2],"r16_8":[0,2],
-    "qf_1":[1,1,"Brasilía"],"qf_2":[2,0],"qf_3":[2,1],"qf_4":[2,0],
-    "sf_1":[2,1],"sf_2":[1,1,"Brasilía"],"tp_1":[2,1],"f_1":[3,2],
+    matches: {
+      "r32_1":[2,1],"r32_2":[4,1],"r32_3":[1,3],"r32_4":[1,2],
+      "r32_5":[1,1,"Mexíkó"],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[2,1],
+      "r32_9":[2,0],"r32_10":[3,1],"r32_11":[4,0],"r32_12":[2,1],
+      "r32_13":[2,1],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[2,1],
+      "r16_1":[3,2],"r16_2":[1,2],"r16_3":[1,1,"Portúgal"],"r16_4":[1,3],
+      "r16_5":[1,2],"r16_6":[3,0],"r16_7":[1,2],"r16_8":[0,2],
+      "qf_1":[1,1,"Brasilía"],"qf_2":[2,0],"qf_3":[2,1],"qf_4":[2,0],
+      "sf_1":[2,1],"sf_2":[1,1,"Brasilía"],"tp_1":[2,1],"f_1":[3,2],
+    },
     champion:"Frakkland",runnerUp:"Argentína",third:"Spánn",topScorer:"Mbappé",topScorerGoals:6,
   },
   "Illugi": {
-    "r32_1":[2,1],"r32_2":[3,1],"r32_3":[1,3],"r32_4":[1,3],
-    "r32_5":[1,1,"Mexíkó"],"r32_6":[2,0],"r32_7":[1,0],"r32_8":[1,3,"Senegal"],
-    "r32_9":[3,2],"r32_10":[3,0],"r32_11":[2,0],"r32_12":[2,2,"Portúgal"],
-    "r32_13":[0,0,"Sviss"],"r32_14":[0,1],"r32_15":[3,0],"r32_16":[2,2,"Holland"],
-    "r16_1":[2,3],"r16_2":[1,1,"England"],"r16_3":[3,2],"r16_4":[2,1],
-    "r16_5":[1,2],"r16_6":[2,1],"r16_7":[1,2],"r16_8":[0,3],
-    "qf_1":[1,0],"qf_2":[2,1],"qf_3":[4,2],"qf_4":[2,1],
-    "sf_1":[0,0,"Portúgal"],"sf_2":[1,2],"tp_1":[1,3],"f_1":[2,1],
+    matches: {
+      "r32_1":[2,1],"r32_2":[3,1],"r32_3":[1,3],"r32_4":[1,3],
+      "r32_5":[1,1,"Mexíkó"],"r32_6":[2,0],"r32_7":[1,0],"r32_8":[1,3,"Senegal"],
+      "r32_9":[3,2],"r32_10":[3,0],"r32_11":[2,0],"r32_12":[2,2,"Portúgal"],
+      "r32_13":[0,0,"Sviss"],"r32_14":[0,1],"r32_15":[3,0],"r32_16":[2,2,"Holland"],
+      "r16_1":[2,3],"r16_2":[1,1,"England"],"r16_3":[3,2],"r16_4":[2,1],
+      "r16_5":[1,2],"r16_6":[2,1],"r16_7":[1,2],"r16_8":[0,3],
+      "qf_1":[1,0],"qf_2":[2,1],"qf_3":[4,2],"qf_4":[2,1],
+      "sf_1":[0,0,"Portúgal"],"sf_2":[1,2],"tp_1":[1,3],"f_1":[2,1],
+    },
     champion:"Þýskaland",runnerUp:"Argentína",third:"Noregur",topScorer:"Havertz",topScorerGoals:null,
   },
   "Hroar": {
-    "r32_1":[2,1],"r32_2":[2,0],"r32_3":[1,2],"r32_4":[1,2],
-    "r32_5":[2,1],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[2,1],
-    "r32_9":[2,1],"r32_10":[3,1],"r32_11":[2,0],"r32_12":[1,2],
-    "r32_13":[2,1],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[1,2],
-    "r16_1":[3,2],"r16_2":[1,3],"r16_3":[1,2],"r16_4":[1,3],
-    "r16_5":[2,1],"r16_6":[3,1],"r16_7":[0,2],"r16_8":[1,2],
-    "qf_1":[2,1],"qf_2":[3,1],"qf_3":[3,1],"qf_4":[2,1],
-    "sf_1":[2,1],"sf_2":[1,3],"tp_1":[2,1],"f_1":[2,3],
+    matches: {
+      "r32_1":[2,1],"r32_2":[2,0],"r32_3":[1,2],"r32_4":[1,2],
+      "r32_5":[2,1],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[2,1],
+      "r32_9":[2,1],"r32_10":[3,1],"r32_11":[2,0],"r32_12":[1,2],
+      "r32_13":[2,1],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[1,2],
+      "r16_1":[3,2],"r16_2":[1,3],"r16_3":[1,2],"r16_4":[1,3],
+      "r16_5":[2,1],"r16_6":[3,1],"r16_7":[0,2],"r16_8":[1,2],
+      "qf_1":[2,1],"qf_2":[3,1],"qf_3":[3,1],"qf_4":[2,1],
+      "sf_1":[2,1],"sf_2":[1,3],"tp_1":[2,1],"f_1":[2,3],
+    },
     champion:"Argentína",runnerUp:"Frakkland",third:"Spánn",topScorer:"Lamine Yamal",topScorerGoals:6,
   },
   "Geimur": {
-    "r32_1":[2,1],"r32_2":[4,0],"r32_3":[0,2],"r32_4":[1,2],
-    "r32_5":[1,2],"r32_6":[2,0],"r32_7":[1,0],"r32_8":[1,1,"Senegal"],
-    "r32_9":[3,1],"r32_10":[3,2],"r32_11":[5,1],"r32_12":[2,1],
-    "r32_13":[2,0],"r32_14":[1,1,"Ástralía"],"r32_15":[3,0],"r32_16":[2,1],
-    "r16_1":[2,1],"r16_2":[2,2,"England"],"r16_3":[2,3],"r16_4":[1,2],
-    "r16_5":[1,2],"r16_6":[3,0],"r16_7":[1,2],"r16_8":[0,2],
-    "qf_1":[2,0],"qf_2":[2,1],"qf_3":[2,0],"qf_4":[3,1],
-    "sf_1":[2,1],"sf_2":[3,3,"Brasilía"],"tp_1":[2,0],"f_1":[2,0],
+    matches: {
+      "r32_1":[2,1],"r32_2":[4,0],"r32_3":[0,2],"r32_4":[1,2],
+      "r32_5":[1,2],"r32_6":[2,0],"r32_7":[1,0],"r32_8":[1,1,"Senegal"],
+      "r32_9":[3,1],"r32_10":[3,2],"r32_11":[5,1],"r32_12":[2,1],
+      "r32_13":[2,0],"r32_14":[1,1,"Ástralía"],"r32_15":[3,0],"r32_16":[2,1],
+      "r16_1":[2,1],"r16_2":[2,2,"England"],"r16_3":[2,3],"r16_4":[1,2],
+      "r16_5":[1,2],"r16_6":[3,0],"r16_7":[1,2],"r16_8":[0,2],
+      "qf_1":[2,0],"qf_2":[2,1],"qf_3":[2,0],"qf_4":[3,1],
+      "sf_1":[2,1],"sf_2":[3,3,"Brasilía"],"tp_1":[2,0],"f_1":[2,0],
+    },
     champion:"Frakkland",runnerUp:"Argentína",third:"Spánn",topScorer:"Haaland",topScorerGoals:null,
   },
   "Formy": {
-    "r32_1":[4,1],"r32_2":[5,1],"r32_3":[1,2],"r32_4":[1,2],
-    "r32_5":[3,1],"r32_6":[3,1],"r32_7":[2,0],"r32_8":[2,0],
-    "r32_9":[2,1],"r32_10":[3,1],"r32_11":[6,0],"r32_12":[2,1],
-    "r32_13":[3,1],"r32_14":[0,2],"r32_15":[3,0],"r32_16":[3,2],
-    "r16_1":[2,0],"r16_2":[1,2],"r16_3":[1,0],"r16_4":[1,3],
-    "r16_5":[1,3],"r16_6":[3,0],"r16_7":[1,2],"r16_8":[1,3],
-    "qf_1":[2,0],"qf_2":[3,1],"qf_3":[2,1],"qf_4":[2,0],
-    "sf_1":[2,0],"sf_2":[2,1],"tp_1":[1,2],"f_1":[1,0],
+    matches: {
+      "r32_1":[4,1],"r32_2":[5,1],"r32_3":[1,2],"r32_4":[1,2],
+      "r32_5":[3,1],"r32_6":[3,1],"r32_7":[2,0],"r32_8":[2,0],
+      "r32_9":[2,1],"r32_10":[3,1],"r32_11":[6,0],"r32_12":[2,1],
+      "r32_13":[3,1],"r32_14":[0,2],"r32_15":[3,0],"r32_16":[3,2],
+      "r16_1":[2,0],"r16_2":[1,2],"r16_3":[1,0],"r16_4":[1,3],
+      "r16_5":[1,3],"r16_6":[3,0],"r16_7":[1,2],"r16_8":[1,3],
+      "qf_1":[2,0],"qf_2":[3,1],"qf_3":[2,1],"qf_4":[2,0],
+      "sf_1":[2,0],"sf_2":[2,1],"tp_1":[1,2],"f_1":[1,0],
+    },
     champion:"Frakkland",runnerUp:"Brasilía",third:"Argentína",topScorer:"Harry Kane",topScorerGoals:7,
   },
   "Sprölli": {
-    "r32_1":[1,0],"r32_2":[3,0],"r32_3":[1,3],"r32_4":[1,2],
-    "r32_5":[2,0],"r32_6":[3,1],"r32_7":[1,0],"r32_8":[2,1],
-    "r32_9":[3,1],"r32_10":[3,0],"r32_11":[2,0],"r32_12":[2,1],
-    "r32_13":[1,0],"r32_14":[1,2],"r32_15":[2,0],"r32_16":[3,2],
-    "r16_1":[2,1],"r16_2":[1,2],"r16_3":[3,1],"r16_4":[1,2],
-    "r16_5":[1,0],"r16_6":[3,0],"r16_7":[0,2],"r16_8":[0,3],
-    "qf_1":[2,3],"qf_2":[1,0],"qf_3":[3,0],"qf_4":[1,2],
-    "sf_1":[2,1],"sf_2":[2,1],"tp_1":[3,0],"f_1":[3,2],
+    matches: {
+      "r32_1":[1,0],"r32_2":[3,0],"r32_3":[1,3],"r32_4":[1,2],
+      "r32_5":[2,0],"r32_6":[3,1],"r32_7":[1,0],"r32_8":[2,1],
+      "r32_9":[3,1],"r32_10":[3,0],"r32_11":[2,0],"r32_12":[2,1],
+      "r32_13":[1,0],"r32_14":[1,2],"r32_15":[2,0],"r32_16":[3,2],
+      "r16_1":[2,1],"r16_2":[1,2],"r16_3":[3,1],"r16_4":[1,2],
+      "r16_5":[1,0],"r16_6":[3,0],"r16_7":[0,2],"r16_8":[0,3],
+      "qf_1":[2,3],"qf_2":[1,0],"qf_3":[3,0],"qf_4":[1,2],
+      "sf_1":[2,1],"sf_2":[2,1],"tp_1":[3,0],"f_1":[3,2],
+    },
     champion:"Holland",runnerUp:"England",third:"Portúgal",topScorer:"C. Ronaldo",topScorerGoals:7,
   },
   "Jóki": {
-    "r32_1":[2,1],"r32_2":[3,0],"r32_3":[2,1],"r32_4":[1,3],
-    "r32_5":[1,0],"r32_6":[2,0],"r32_7":[3,1],"r32_8":[1,1,"Belgía"],
-    "r32_9":[3,2],"r32_10":[2,0],"r32_11":[4,0],"r32_12":[2,1],
-    "r32_13":[0,1],"r32_14":[1,1,"Ástralía"],"r32_15":[2,0],"r32_16":[2,1],
-    "r16_1":[2,1],"r16_2":[1,2],"r16_3":[2,2,"Portúgal"],"r16_4":[1,2],
-    "r16_5":[1,2],"r16_6":[3,0],"r16_7":[0,1],"r16_8":[0,2],
-    "qf_1":[1,1,"Brasilía"],"qf_2":[2,1],"qf_3":[1,0],"qf_4":[2,0],
-    "sf_1":[2,2,"Portúgal"],"sf_2":[2,1],"tp_1":[2,1],"f_1":[2,0],
+    matches: {
+      "r32_1":[2,1],"r32_2":[3,0],"r32_3":[2,1],"r32_4":[1,3],
+      "r32_5":[1,0],"r32_6":[2,0],"r32_7":[3,1],"r32_8":[1,1,"Belgía"],
+      "r32_9":[3,2],"r32_10":[2,0],"r32_11":[4,0],"r32_12":[2,1],
+      "r32_13":[0,1],"r32_14":[1,1,"Ástralía"],"r32_15":[2,0],"r32_16":[2,1],
+      "r16_1":[2,1],"r16_2":[1,2],"r16_3":[2,2,"Portúgal"],"r16_4":[1,2],
+      "r16_5":[1,2],"r16_6":[3,0],"r16_7":[0,1],"r16_8":[0,2],
+      "qf_1":[1,1,"Brasilía"],"qf_2":[2,1],"qf_3":[1,0],"qf_4":[2,0],
+      "sf_1":[2,2,"Portúgal"],"sf_2":[2,1],"tp_1":[2,1],"f_1":[2,0],
+    },
     champion:"Portúgal",runnerUp:"Brasilía",third:"Frakkland",topScorer:"Harry Kane",topScorerGoals:6,
   },
   "Fáni": {
-    "r32_1":[3,2],"r32_2":[3,0],"r32_3":[1,2],"r32_4":[1,2],
-    "r32_5":[1,0],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[2,2,"Senegal"],
-    "r32_9":[3,1],"r32_10":[2,0],"r32_11":[4,0],"r32_12":[1,2],
-    "r32_13":[1,0],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[1,2],
-    "r16_1":[2,2,"Brasilía"],"r16_2":[1,2],"r16_3":[0,1],"r16_4":[1,2],
-    "r16_5":[1,2],"r16_6":[3,1],"r16_7":[0,2],"r16_8":[1,3],
-    "qf_1":[2,2,"Noregur"],"qf_2":[1,0],"qf_3":[2,1],"qf_4":[2,1],
-    "sf_1":[2,2,"Spánn"],"sf_2":[1,3],"tp_1":[3,1],"f_1":[1,2],
+    matches: {
+      "r32_1":[3,2],"r32_2":[3,0],"r32_3":[1,2],"r32_4":[1,2],
+      "r32_5":[1,0],"r32_6":[2,0],"r32_7":[2,1],"r32_8":[2,2,"Senegal"],
+      "r32_9":[3,1],"r32_10":[2,0],"r32_11":[4,0],"r32_12":[1,2],
+      "r32_13":[1,0],"r32_14":[0,1],"r32_15":[2,0],"r32_16":[1,2],
+      "r16_1":[2,2,"Brasilía"],"r16_2":[1,2],"r16_3":[0,1],"r16_4":[1,2],
+      "r16_5":[1,2],"r16_6":[3,1],"r16_7":[0,2],"r16_8":[1,3],
+      "qf_1":[2,2,"Noregur"],"qf_2":[1,0],"qf_3":[2,1],"qf_4":[2,1],
+      "sf_1":[2,2,"Spánn"],"sf_2":[1,3],"tp_1":[3,1],"f_1":[1,2],
+    },
     champion:"Argentína",runnerUp:"Spánn",third:"Frakkland",topScorer:"Harry Kane",topScorerGoals:5,
   },
 };
@@ -1353,7 +1398,7 @@ function scoreKoMatch(guess, real){
 }
 
 function computeKnockoutMatchScore(playerName){
-  const guesses = KO_MATCH_GUESSES[playerName];
+  const guesses = KO_GUESSES[playerName];
   if(!guesses) return 0;
   let total = 0;
   KO_MATCHES.forEach(m => {
@@ -1374,15 +1419,15 @@ function renderKnockout(){
   const kr = KNOCKOUT_RESULTS;
   const bonusItems = [
     { label:'🏆 Heimsmeistari', result: kr.champion, pts: 20,
-      guesses: players.map(p => ({ name: p, val: KO_MATCH_GUESSES[p]?.champion || KNOCKOUT_GUESSES[p]?.champion })) },
+      guesses: players.map(p => ({ name: p, val: KO_GUESSES[p]?.champion })) },
     { label:'🥈 2. sæti', result: kr.runnerUp, pts: 10,
-      guesses: players.map(p => ({ name: p, val: KO_MATCH_GUESSES[p]?.runnerUp || KNOCKOUT_GUESSES[p]?.runnerUp })) },
+      guesses: players.map(p => ({ name: p, val: KO_GUESSES[p]?.runnerUp })) },
     { label:'🥉 3. sæti', result: kr.third, pts: 7,
-      guesses: players.map(p => ({ name: p, val: KO_MATCH_GUESSES[p]?.third || KNOCKOUT_GUESSES[p]?.third })) },
+      guesses: players.map(p => ({ name: p, val: KO_GUESSES[p]?.third })) },
     { label:'⚽ Markakóngur', result: kr.topScorer, pts: 10,
-      guesses: players.map(p => ({ name: p, val: KO_MATCH_GUESSES[p]?.topScorer || KNOCKOUT_GUESSES[p]?.topScorer })) },
+      guesses: players.map(p => ({ name: p, val: KO_GUESSES[p]?.topScorer })) },
     { label:'⚽ Markfjöldi', result: kr.topScorerGoals ? String(kr.topScorerGoals) : null, pts: 5,
-      guesses: players.map(p => ({ name: p, val: (KO_MATCH_GUESSES[p]?.topScorerGoals || KNOCKOUT_GUESSES[p]?.topScorerGoals) ? String(KO_MATCH_GUESSES[p]?.topScorerGoals || KNOCKOUT_GUESSES[p]?.topScorerGoals) : null })) },
+      guesses: players.map(p => ({ name: p, val: (KO_GUESSES[p]?.topScorerGoals) ? String(KO_GUESSES[p]?.topScorerGoals) : null })) },
   ];
 
   document.getElementById('ko-bonus-grid').innerHTML = bonusItems.map(b => `
@@ -1416,36 +1461,28 @@ function renderKnockout(){
         </div>
         <div class="ko-guesses">`;
 
+      // Single loop — show with pts if result known, plain if not
       const scorers=[], nonscorers=[];
       players.forEach(pname => {
-        const g = KO_MATCH_GUESSES[pname]?.[m.id];
+        const g = KO_GUESSES[pname]?.matches?.[m.id];
         if(!g) return;
         const gh = Array.isArray(g) ? g[0] : g.h;
         const ga = Array.isArray(g) ? g[1] : g.a;
         const gadv = Array.isArray(g) ? (g[2]||null) : (g.advancer||null);
         if(gh==null||ga==null) return;
-        const r = m.result ? {...m.result, home:m.home, away:m.away} : null;
-        const pts = (hasResult && r) ? scoreKoMatch(g, r) : null;
-        if(hasResult && pts===0){ nonscorers.push(pname); return; }
         const gStr = gh + '–' + ga + (gadv ? ` (${gadv})` : '');
-        const cls = pts === 3 ? 'exact' : pts === 2 ? 'correct' : '';
-        const ptsStr = pts != null ? ` · ${pts}p` : '';
-        scorers.push(`<span class="ko-guess ${cls}"><span class="name">${pname}</span><span class="score">${gStr}${ptsStr}</span></span>`);
+        if(hasResult){
+          const r = {...m.result, home:m.home, away:m.away};
+          const pts = scoreKoMatch(g, r);
+          if(pts===0){ nonscorers.push(pname); return; }
+          const cls = pts === 3 ? 'exact' : pts === 2 ? 'correct' : '';
+          scorers.push(`<span class="ko-guess ${cls}"><span class="name">${pname}</span><span class="score">${gStr} · ${pts}p</span></span>`);
+        } else {
+          scorers.push(`<span class="ko-guess"><span class="name">${pname}</span><span class="score">${gStr}</span></span>`);
+        }
       });
       if(scorers.length) html += scorers.join('');
       if(hasResult && nonscorers.length) html += `<span class="ko-guess wrong" style="font-size:10px">0p: ${nonscorers.join(', ')}</span>`;
-      if(!hasResult){
-        players.forEach(pname => {
-          const g = KO_MATCH_GUESSES[pname]?.[m.id];
-          if(!g) return;
-          const gh = Array.isArray(g) ? g[0] : g.h;
-          const ga = Array.isArray(g) ? g[1] : g.a;
-          const gadv = Array.isArray(g) ? (g[2]||null) : (g.advancer||null);
-          if(gh==null||ga==null) return;
-          const gStr = gh + '–' + ga + (gadv ? ` (${gadv})` : '');
-          html += `<span class="ko-guess"><span class="name">${pname}</span><span class="score">${gStr}</span></span>`;
-        });
-      }
 
       html += `</div></div>`;
     });
@@ -1471,6 +1508,11 @@ try{
 // Apply known correct overrides, always
 Object.entries(RESULT_OVERRIDES).forEach(([id,r])=>{
   results[parseInt(id)]={h:r[0],a:r[1],auto:true};
+});
+// Apply KO overrides
+Object.entries(KO_RESULT_OVERRIDES).forEach(([id,r])=>{
+  const m=KO_MATCHES.find(x=>x.id===id);
+  if(m) m.result={...r,auto:true};
 });
 saveResults();
 initAdmin();
