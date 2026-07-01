@@ -1406,14 +1406,14 @@ function scoreKoMatch(guess, real){
 }
 
 function computeKnockoutMatchScore(playerName){
-  const guesses = KO_GUESSES[playerName];
-  if(!guesses) return 0;
+  const player = KO_GUESSES[playerName];
+  if(!player) return 0;
+  const guesses = player.matches || player; // support both formats
   let total = 0;
   KO_MATCHES.forEach(m => {
     if(!m.result) return;
     const g = guesses[m.id];
     if(!g) return;
-    // Pass match home/away so scoreKoMatch can resolve advancer names
     const r = {...m.result, home: m.home, away: m.away};
     total += scoreKoMatch(g, r);
   });
